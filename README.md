@@ -93,12 +93,13 @@ pour qu'un capital saisi de travers ne produise pas de jauge absurde), la procha
 prélèvement au 31 tombe le 28 février) et le nombre de mensualités restantes au rythme
 actuel, qui reste une estimation puisqu'elle ignore les intérêts encore à courir.
 
-La durée est saisie en années et conservée en mois : un prêt de dix-huit mois est déjà
-représentable en base, il ne manque qu'un champ à l'écran.
+La durée se saisit et se conserve en mois — un prêt de dix-huit mois se déclare donc
+directement — mais s'affiche en clair : 60 mois se relisent « sur 5 ans », 18 mois
+« sur 1 an et 6 mois ». Plafond à 600 mois.
 
 À la déclaration, un seul des deux capitaux suffit — l'autre s'en déduit, et le crédit
 démarre alors comme s'il n'avait rien remboursé. Un capital restant supérieur au capital
-emprunté est refusé, comme une durée au-delà de 50 ans ou un jour hors du 1–31. Les crédits
+emprunté est refusé, comme une durée hors du 1–600 ou un jour hors du 1–31. Les crédits
 d'un compte apparaissent aussi sur son écran de détail.
 
 Un crédit reste déclaratif : sa mensualité ne crée pas d'opération et ne bouge donc pas le
@@ -162,7 +163,7 @@ hors ligne aux données demanderait une persistance locale chiffrée, qui n'est 
 ./vendor/bin/sail artisan test
 ```
 
-113 tests couvrent l'authentification, le verrouillage, le pointage, la création de comptes,
+114 tests couvrent l'authentification, le verrouillage, le pointage, la création de comptes,
 d'opérations, de tags et de crédits, les autorisations entre profils, la génération des
 récurrentes, les échéances de crédit, le calcul de chaque widget et l'analyse des montants
 saisis.

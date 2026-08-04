@@ -37,7 +37,7 @@ class CreditController extends Controller
             'borrowed_cents' => $request->borrowedCents(),
             'remaining_cents' => $request->remainingCents(),
             'monthly_cents' => $request->monthlyCents(),
-            'term_months' => $request->termMonths(),
+            'term_months' => $request->integer('term_months'),
             'payment_day' => $request->integer('payment_day'),
         ]);
 

@@ -56,7 +56,7 @@ class CreditTest extends TestCase
                 'borrowed' => '180 000',
                 'remaining' => '142 300,00',
                 'monthly' => '745,00 €',
-                'term_years' => 20,
+                'term_months' => 240,
                 'payment_day' => 10,
             ])
             ->assertRedirect();
@@ -81,7 +81,7 @@ class CreditTest extends TestCase
                 'name' => 'Prêt travaux',
                 'remaining' => '9 000',
                 'monthly' => '150',
-                'term_years' => 5,
+                'term_months' => 60,
                 'payment_day' => 5,
             ])
             ->assertRedirect();
@@ -104,7 +104,7 @@ class CreditTest extends TestCase
                 'name' => 'Prêt étudiant',
                 'borrowed' => '12 000',
                 'monthly' => '100',
-                'term_years' => 10,
+                'term_months' => 120,
                 'payment_day' => 15,
             ])
             ->assertRedirect();
@@ -244,14 +244,13 @@ class CreditTest extends TestCase
                 'borrowed' => '180 000',
                 'remaining' => '142 300',
                 'monthly' => '745',
-                'term_years' => 20,
+                'term_months' => 240,
                 'payment_day' => 10,
             ])
             ->assertRedirect();
 
         $credit = $account->credits()->sole();
 
-        // La durée est saisie en années et conservée en mois.
         $this->assertSame(240, $credit->term_months);
         $this->assertSame(10, $credit->payment_day);
         $this->assertSame('20 ans', $credit->term_label);
@@ -269,7 +268,7 @@ class CreditTest extends TestCase
                 'borrowed' => '10 000',
                 'monthly' => '150',
             ])
-            ->assertSessionHasErrors(['term_years', 'payment_day']);
+            ->assertSessionHasErrors(['term_months', 'payment_day']);
 
         $this->assertSame(0, $account->credits()->count());
     }
@@ -285,10 +284,10 @@ class CreditTest extends TestCase
                 'name' => 'Prêt',
                 'borrowed' => '10 000',
                 'monthly' => '150',
-                'term_years' => 80,
+                'term_months' => 700,
                 'payment_day' => 32,
             ])
-            ->assertSessionHasErrors(['term_years', 'payment_day']);
+            ->assertSessionHasErrors(['term_months', 'payment_day']);
     }
 
     #[DataProvider('terms')]
@@ -361,5 +360,27 @@ class CreditTest extends TestCase
                 ->where('credits.0.payment_day', null)
                 ->where('credits.0.next_payment_label', null)
                 ->etc());
+    }
+
+    public function test_a_term_that_is_not_a_whole_number_of_years_can_be_declared(): void
+    {
+        $user = User::factory()->create();
+        $account = Account::factory()->for($user)->create();
+
+        $this->actingAs($user)
+            ->post('/credits', [
+                'account_id' => $account->id,
+                'name' => 'Prêt électroménager',
+                'borrowed' => '1 800',
+                'monthly' => '100',
+                'term_months' => 18,
+                'payment_day' => 12,
+            ])
+            ->assertRedirect();
+
+        $credit = $account->credits()->sole();
+
+        $this->assertSame(18, $credit->term_months);
+        $this->assertSame('1 an et 6 mois', $credit->term_label);
     }
 }

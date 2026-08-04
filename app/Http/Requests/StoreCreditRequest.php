@@ -10,6 +10,9 @@ use Illuminate\Validation\Validator;
 
 class StoreCreditRequest extends FormRequest
 {
+    /** Cinquante ans, la durée d'un prêt immobilier très long. */
+    private const MAXIMUM_TERM_MONTHS = 600;
+
     /**
      * @return array<string, mixed>
      */
@@ -28,7 +31,7 @@ class StoreCreditRequest extends FormRequest
              */
             'borrowed' => ['required_without:remaining', 'nullable', new ValidAmount(minimumCents: 1)],
             'remaining' => ['required_without:borrowed', 'nullable', new ValidAmount(minimumCents: 1)],
-            'term_years' => ['required', 'integer', 'min:1', 'max:50'],
+            'term_months' => ['required', 'integer', 'min:1', 'max:'.self::MAXIMUM_TERM_MONTHS],
             'payment_day' => ['required', 'integer', 'min:1', 'max:31'],
         ];
     }
@@ -45,21 +48,13 @@ class StoreCreditRequest extends FormRequest
             'monthly.required' => 'Saisissez la mensualité.',
             'borrowed.required_without' => 'Saisissez le capital emprunté ou le capital restant.',
             'remaining.required_without' => 'Saisissez le capital restant ou le capital emprunté.',
-            'term_years.required' => 'Indiquez la durée du crédit, en années.',
-            'term_years.integer' => 'La durée doit être un nombre entier d’années.',
-            'term_years.max' => 'La durée ne peut pas dépasser 50 ans.',
+            'term_months.required' => 'Indiquez la durée du crédit, en mois.',
+            'term_months.integer' => 'La durée doit être un nombre entier de mois.',
+            'term_months.max' => 'La durée ne peut pas dépasser '.self::MAXIMUM_TERM_MONTHS.' mois.',
             'payment_day.required' => 'Indiquez le jour du mois où vous êtes prélevé.',
             'payment_day.min' => 'Le jour de prélèvement va du 1 au 31.',
             'payment_day.max' => 'Le jour de prélèvement va du 1 au 31.',
         ];
-    }
-
-    /**
-     * La durée est saisie en années et conservée en mois.
-     */
-    public function termMonths(): int
-    {
-        return $this->integer('term_years') * 12;
     }
 
     public function withValidator(Validator $validator): void

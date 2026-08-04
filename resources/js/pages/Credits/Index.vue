@@ -24,7 +24,7 @@ const form = useForm({
     borrowed: '',
     remaining: '',
     monthly: '',
-    term_years: '',
+    term_months: '',
     payment_day: '',
 });
 
@@ -53,7 +53,7 @@ function scheduleLabel(credit) {
 function declareCredit() {
     form.post(routes.credits, {
         preserveScroll: true,
-        onSuccess: () => form.reset('name', 'borrowed', 'remaining', 'monthly', 'term_years', 'payment_day'),
+        onSuccess: () => form.reset('name', 'borrowed', 'remaining', 'monthly', 'term_months', 'payment_day'),
     });
 }
 
@@ -181,19 +181,19 @@ function deleteCredit(credit) {
                     </FormField>
 
                     <FormField
-                        label="Durée (années)"
-                        :error="form.errors.term_years"
+                        label="Durée (mois)"
+                        :error="form.errors.term_months"
                         label-desktop-only
                         class="order-4 lg:order-5"
                     >
                         <input
-                            v-model="form.term_years"
+                            v-model="form.term_months"
                             type="number"
                             inputmode="numeric"
                             min="1"
-                            max="50"
+                            max="600"
                             class="field lg:bg-page!"
-                            placeholder="Durée — ex. 5 ans"
+                            placeholder="Durée — ex. 60 mois"
                         />
                     </FormField>
 
