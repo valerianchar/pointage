@@ -146,6 +146,12 @@ protège que l'affichage. Le contrôle d'accès réel, lui, passe par la connexi
 **Mode confidentialité.** L'icône œil remplace tous les montants par `••••• €`. La préférence
 est portée par le profil, donc suivie d'un appareil à l'autre.
 
+**Session expirée.** Quand le jeton CSRF d'une page ne vaut plus rien — onglet resté ouvert,
+sessions vidées —, Laravel répond une page « Page Expired » en HTML qu'une visite Inertia ne
+sait pas interpréter : le bouton paraît mort. `App\Exceptions\RetryExpiredSession` renvoie
+donc l'utilisateur sur sa page, rechargée avec un jeton frais, et une notification lui dit de
+réessayer.
+
 ## PWA
 
 `public/manifest.webmanifest` et `public/sw.js` rendent l'application installable, avec
@@ -163,7 +169,7 @@ hors ligne aux données demanderait une persistance locale chiffrée, qui n'est 
 ./vendor/bin/sail artisan test
 ```
 
-114 tests couvrent l'authentification, le verrouillage, le pointage, la création de comptes,
+116 tests couvrent l'authentification, le verrouillage, le pointage, la création de comptes,
 d'opérations, de tags et de crédits, les autorisations entre profils, la génération des
 récurrentes, les échéances de crédit, le calcul de chaque widget et l'analyse des montants
 saisis.

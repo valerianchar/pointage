@@ -47,6 +47,7 @@ class HandleInertiaRequests extends Middleware
                 : AccountResource::collection($this->userAccounts->forSidebar($user))->resolve(),
             'flash' => [
                 'success' => fn (): ?string => $request->session()->get('success'),
+                'error' => fn (): ?string => $request->session()->get('error'),
             ],
         ];
     }

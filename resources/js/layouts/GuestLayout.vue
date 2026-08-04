@@ -1,5 +1,6 @@
 <script setup>
 import AppLogo from '../components/AppLogo.vue';
+import FlashToast from '../components/FlashToast.vue';
 
 const props = defineProps({
     title: { type: String, required: true },
@@ -23,4 +24,7 @@ const props = defineProps({
             </div>
         </div>
     </div>
+
+    <!-- Les écrans invités doivent aussi pouvoir dire qu'une session a expiré. -->
+    <FlashToast />
 </template>
