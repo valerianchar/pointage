@@ -1,11 +1,14 @@
 <script setup>
 import { computed } from 'vue';
-import { Head, Link, useForm } from '@inertiajs/vue3';
+import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
 import FormField from '../../components/FormField.vue';
 import GuestLayout from '../../layouts/GuestLayout.vue';
 import { routes } from '../../routes';
 
 defineOptions({ layout: null });
+
+const page = usePage();
+const registrationOpen = computed(() => page.props.registration_open);
 
 const form = useForm({ email: '', password: '' });
 
@@ -51,7 +54,7 @@ function submit() {
             </button>
         </form>
 
-        <template #footer>
+        <template v-if="registrationOpen" #footer>
             Pas de compte ?
             <Link :href="routes.register" class="text-accent-soft">Créer un profil</Link>
         </template>

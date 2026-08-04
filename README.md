@@ -34,6 +34,17 @@ L'application répond sur **http://localhost:8080**.
 En développement, `npm run dev` remplace `npm run build` (serveur Vite sur le port 5174).
 Les ports sont réglables dans le `.env` : `APP_PORT`, `VITE_PORT`, `FORWARD_DB_PORT`.
 
+### Mise en ligne
+
+[DEPLOIEMENT.md](DEPLOIEMENT.md) décrit l'installation sur une machine Oracle Cloud
+Always Free : HTTPS automatique, cron réel, sauvegardes. La pile de production tient dans
+[compose.prod.yaml](compose.prod.yaml) — une image qui sert les fichiers, exécute PHP et
+obtient son certificat, plus le planificateur et la base.
+
+`POINTAGE_REGISTRATION_OPEN=false` ferme les inscriptions : l'écran devient inaccessible et
+son lien disparaît de la page de connexion. Une instance en ligne n'a en général qu'un
+propriétaire, et l'application n'a ni vérification d'e-mail ni réinitialisation de mot de passe.
+
 ### Profil de démonstration
 
 Le seeder recrée le jeu de données de la maquette — quatre comptes, leurs tags par défaut,

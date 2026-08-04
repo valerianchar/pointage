@@ -49,6 +49,8 @@ class HandleInertiaRequests extends Middleware
                 'success' => fn (): ?string => $request->session()->get('success'),
                 'error' => fn (): ?string => $request->session()->get('error'),
             ],
+            // L'écran de connexion n'affiche « Créer un profil » que si c'est possible.
+            'registration_open' => config('pointage.registration_open'),
         ];
     }
 }

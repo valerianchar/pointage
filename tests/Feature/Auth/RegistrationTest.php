@@ -56,4 +56,36 @@ class RegistrationTest extends TestCase
 
         $this->assertGuest();
     }
+
+    public function test_registration_can_be_closed_on_an_instance(): void
+    {
+        config(['pointage.registration_open' => false]);
+
+        $this->get('/inscription')
+            ->assertRedirect('/connexion')
+            ->assertSessionHas('error', 'Les inscriptions sont fermées sur cette instance.');
+
+        $this->post('/inscription', [
+            'name' => 'Intrus',
+            'email' => 'intrus@exemple.fr',
+            'password' => 'mot-de-passe-solide',
+            'password_confirmation' => 'mot-de-passe-solide',
+        ])->assertRedirect('/connexion');
+
+        $this->assertGuest();
+        $this->assertDatabaseMissing('users', ['email' => 'intrus@exemple.fr']);
+    }
+
+    public function test_the_login_screen_hides_the_link_when_registration_is_closed(): void
+    {
+        config(['pointage.registration_open' => false]);
+
+        $this->get('/connexion')
+            ->assertInertia(fn (AssertableInertia $page) => $page->where('registration_open', false));
+
+        config(['pointage.registration_open' => true]);
+
+        $this->get('/connexion')
+            ->assertInertia(fn (AssertableInertia $page) => $page->where('registration_open', true));
+    }
 }

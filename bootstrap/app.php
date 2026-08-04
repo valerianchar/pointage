@@ -2,6 +2,7 @@
 
 use App\Exceptions\RetryExpiredSession;
 use App\Http\Middleware\EnsureAppIsUnlocked;
+use App\Http\Middleware\EnsureRegistrationIsOpen;
 use App\Http\Middleware\HandleInertiaRequests;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -23,7 +24,16 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'unlocked' => EnsureAppIsUnlocked::class,
+            'registration' => EnsureRegistrationIsOpen::class,
         ]);
+
+        /*
+         * Aucun proxy de confiance n'est déclaré : en production, le serveur qui
+         * termine le TLS est l'application elle-même. Faire confiance aux en-têtes
+         * X-Forwarded-* permettrait de falsifier l'adresse IP, donc de contourner la
+         * limite de tentatives de connexion. Un CDN placé devant plus tard devra
+         * être déclaré ici, nommément.
+         */
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

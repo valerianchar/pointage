@@ -18,8 +18,10 @@ Route::middleware('guest')->group(function () {
     Route::get('/connexion', [AuthenticatedSessionController::class, 'create'])->name('login');
     Route::post('/connexion', [AuthenticatedSessionController::class, 'store']);
 
-    Route::get('/inscription', [RegisteredUserController::class, 'create'])->name('register');
-    Route::post('/inscription', [RegisteredUserController::class, 'store']);
+    Route::middleware('registration')->group(function () {
+        Route::get('/inscription', [RegisteredUserController::class, 'create'])->name('register');
+        Route::post('/inscription', [RegisteredUserController::class, 'store']);
+    });
 });
 
 Route::middleware('auth')->group(function () {
