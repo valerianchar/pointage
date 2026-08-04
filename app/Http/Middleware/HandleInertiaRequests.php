@@ -1,0 +1,53 @@
+<?php
+
+namespace App\Http\Middleware;
+
+use App\Http\Resources\AccountResource;
+use App\Queries\UserAccounts;
+use Illuminate\Http\Request;
+use Inertia\Middleware;
+
+class HandleInertiaRequests extends Middleware
+{
+    /**
+     * @var string
+     */
+    protected $rootView = 'app';
+
+    public function __construct(private readonly UserAccounts $userAccounts) {}
+
+    public function version(Request $request): ?string
+    {
+        return parent::version($request);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function share(Request $request): array
+    {
+        $user = $request->user();
+
+        return [
+            ...parent::share($request),
+            'auth' => [
+                'user' => $user === null ? null : [
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'initials' => $user->initials,
+                    'hide_balances' => $user->hide_balances,
+                ],
+            ],
+            /*
+             * La sidebar desktop liste les comptes sur tous les écrans : ils sont
+             * donc partagés, en une requête agrégée, plutôt que répétés page à page.
+             */
+            'accounts' => $user === null
+                ? []
+                : AccountResource::collection($this->userAccounts->forSidebar($user))->resolve(),
+            'flash' => [
+                'success' => fn (): ?string => $request->session()->get('success'),
+            ],
+        ];
+    }
+}

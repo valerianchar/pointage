@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="Pointage">
+    <!-- Fond à fond perdu : le masque de la plateforme découpe lui-même la forme. -->
+    <rect width="512" height="512" fill="#161826"/>
+    <!-- Motif ramené dans la zone sûre (80 % centrés) exigée des icônes maskable. -->
+    <g transform="translate(256 256) scale(0.66) translate(-256 -256)">
+        <circle cx="256" cy="256" r="158" fill="none" stroke="#9184d9" stroke-width="12"/>
+        <g fill="none" stroke="#9184d9" stroke-width="22" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="164" y="206" width="184" height="112" rx="22"/>
+            <path d="M164 248h184"/>
+        </g>
+        <circle cx="312" cy="283" r="15" fill="#9184d9"/>
+    </g>
+</svg>

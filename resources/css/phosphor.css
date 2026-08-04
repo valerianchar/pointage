@@ -1,0 +1,53 @@
+/*
+ * Sous-ensemble Phosphor (poids regular) limité aux icônes réellement affichées.
+ *
+ * La feuille complète du paquet déclare près de neuf mille icônes (117 kB) et
+ * embarque une police SVG de 3 Mo pour des navigateurs disparus. On garde donc la
+ * police woff2 du paquet et on ne déclare que les glyphes utilisés.
+ *
+ * En ajoutant une icône dans un composant ou dans AccountType, ajoutez sa règle
+ * ici : son point de code se lit dans
+ * node_modules/@phosphor-icons/web/src/regular/style.css.
+ */
+@font-face {
+    font-family: 'Phosphor';
+    src: url('@phosphor-icons/web/regular/Phosphor.woff2') format('woff2');
+    font-weight: normal;
+    font-style: normal;
+    font-display: block;
+}
+
+.ph {
+    font-family: 'Phosphor' !important;
+    font-style: normal;
+    font-weight: normal;
+    font-variant: normal;
+    line-height: 1;
+    letter-spacing: 0;
+    text-transform: none;
+    display: inline-block;
+    speak: never;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+.ph-arrows-clockwise::before { content: '\e094'; }
+.ph-bank::before { content: '\e0b4'; }
+.ph-caret-left::before { content: '\e138'; }
+.ph-chart-line-up::before { content: '\e156'; }
+.ph-check::before { content: '\e182'; }
+.ph-currency-btc::before { content: '\e618'; }
+.ph-eye::before { content: '\e220'; }
+.ph-eye-slash::before { content: '\e224'; }
+.ph-house::before { content: '\e2c2'; }
+.ph-lock::before { content: '\e2fa'; }
+.ph-piggy-bank::before { content: '\ea04'; }
+.ph-plus::before { content: '\e3d4'; }
+.ph-plus-circle::before { content: '\e3d6'; }
+.ph-shield-check::before { content: '\e40c'; }
+.ph-sign-out::before { content: '\e42a'; }
+.ph-tag::before { content: '\e478'; }
+.ph-user-focus::before { content: '\e6fc'; }
+.ph-users::before { content: '\e4d6'; }
+.ph-wallet::before { content: '\e68a'; }
+.ph-x::before { content: '\e4f6'; }

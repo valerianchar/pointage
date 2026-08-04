@@ -1,0 +1,137 @@
+@import 'tailwindcss';
+
+/* Inter en latin seul : les autres sous-ensembles n'ont pas d'usage ici. */
+@import '@fontsource/inter/latin-400.css';
+@import '@fontsource/inter/latin-500.css';
+@import '@fontsource/inter/latin-600.css';
+@import './phosphor.css';
+
+@source '../js/**/*.{vue,js}';
+@source '../views/**/*.blade.php';
+
+/*
+ * Thème « Nocturne » — jetons issus du handoff de design.
+ * L'accent violet ne sert qu'en trait, contour ou jauge : jamais en aplat de fond.
+ */
+@theme {
+    --font-sans: 'Inter', system-ui, sans-serif;
+
+    --color-page: #161826;
+    --color-chrome: #1b1d2c;
+    --color-surface: #232532;
+    --color-surface-hover: #292b31;
+
+    --color-ink: #e9e9ed;
+    --color-ink-muted: rgba(233, 233, 237, 0.55);
+    --color-ink-faint: rgba(233, 233, 237, 0.45);
+
+    --color-accent: #9184d9;
+    --color-accent-soft: #d2cefd;
+    --color-accent-surface: #2b2741;
+    --color-accent-wash: rgba(145, 132, 217, 0.12);
+
+    --color-gauge: #9184d9;
+    --color-gauge-secondary: #796cbf;
+    --color-gauge-neutral: #75798c;
+    --color-gauge-track: #292b31;
+    --color-spark: #423a6a;
+    --color-switch-track: #3f424d;
+
+    --color-hairline: rgba(233, 233, 237, 0.16);
+    --color-hairline-soft: rgba(233, 233, 237, 0.1);
+    --color-outline-muted: rgba(233, 233, 237, 0.35);
+
+    --radius-card: 8px;
+    --radius-pill: 99px;
+}
+
+@layer base {
+    html {
+        background-color: var(--color-page);
+        color-scheme: dark;
+    }
+
+    body {
+        margin: 0;
+        min-height: 100vh;
+        background-color: var(--color-page);
+        color: var(--color-ink);
+        font-family: var(--font-sans);
+        -webkit-font-smoothing: antialiased;
+    }
+
+    /* Les titres du thème ne dépassent jamais le 500. */
+    h1,
+    h2,
+    h3 {
+        font-weight: 500;
+        letter-spacing: -0.015em;
+    }
+
+    :focus-visible {
+        outline: 2px solid var(--color-accent);
+        outline-offset: 2px;
+    }
+
+    input,
+    button {
+        outline: none;
+    }
+}
+
+@utility label-caps {
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-ink-muted);
+}
+
+/* Champs et boutons : un seul contrat visuel, réutilisé par tous les écrans. */
+@utility field {
+    width: 100%;
+    box-sizing: border-box;
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-hairline);
+    border-radius: var(--radius-card);
+    padding: 0.5625rem 0.625rem;
+    color: var(--color-ink);
+    font: inherit;
+    font-size: 14px;
+
+    &::placeholder {
+        color: var(--color-ink-muted);
+    }
+
+    &:focus {
+        border-color: var(--color-accent);
+    }
+}
+
+@utility btn-outline {
+    background-color: transparent;
+    border: 1px solid var(--color-accent);
+    border-radius: var(--radius-card);
+    color: var(--color-accent-soft);
+    font: inherit;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+
+    &:hover:not(:disabled) {
+        background-color: var(--color-accent-wash);
+    }
+
+    &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+}
+
+/* La zone scrollable mobile n'affiche pas de barre, comme sur la maquette iOS. */
+@utility scroll-hidden {
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar {
+        width: 0;
+        height: 0;
+    }
+}
