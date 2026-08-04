@@ -5,8 +5,10 @@ namespace Tests\Feature;
 use App\Models\Account;
 use App\Models\Credit;
 use App\Models\User;
+use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 class CreditTest extends TestCase
@@ -54,6 +56,8 @@ class CreditTest extends TestCase
                 'borrowed' => '180 000',
                 'remaining' => '142 300,00',
                 'monthly' => '745,00 €',
+                'term_years' => 20,
+                'payment_day' => 10,
             ])
             ->assertRedirect();
 
@@ -77,6 +81,8 @@ class CreditTest extends TestCase
                 'name' => 'Prêt travaux',
                 'remaining' => '9 000',
                 'monthly' => '150',
+                'term_years' => 5,
+                'payment_day' => 5,
             ])
             ->assertRedirect();
 
@@ -98,6 +104,8 @@ class CreditTest extends TestCase
                 'name' => 'Prêt étudiant',
                 'borrowed' => '12 000',
                 'monthly' => '100',
+                'term_years' => 10,
+                'payment_day' => 15,
             ])
             ->assertRedirect();
 
@@ -222,5 +230,136 @@ class CreditTest extends TestCase
             ->assertInertia(fn (AssertableInertia $page) => $page
                 ->has('credits', 1)
                 ->where('credits.0.name', 'Prêt auto'));
+    }
+
+    public function test_it_records_the_term_and_the_debit_day(): void
+    {
+        $user = User::factory()->create();
+        $account = Account::factory()->for($user)->create();
+
+        $this->actingAs($user)
+            ->post('/credits', [
+                'account_id' => $account->id,
+                'name' => 'Prêt immobilier',
+                'borrowed' => '180 000',
+                'remaining' => '142 300',
+                'monthly' => '745',
+                'term_years' => 20,
+                'payment_day' => 10,
+            ])
+            ->assertRedirect();
+
+        $credit = $account->credits()->sole();
+
+        // La durée est saisie en années et conservée en mois.
+        $this->assertSame(240, $credit->term_months);
+        $this->assertSame(10, $credit->payment_day);
+        $this->assertSame('20 ans', $credit->term_label);
+    }
+
+    public function test_a_credit_without_a_term_or_a_debit_day_is_refused(): void
+    {
+        $user = User::factory()->create();
+        $account = Account::factory()->for($user)->create();
+
+        $this->actingAs($user)
+            ->post('/credits', [
+                'account_id' => $account->id,
+                'name' => 'Prêt',
+                'borrowed' => '10 000',
+                'monthly' => '150',
+            ])
+            ->assertSessionHasErrors(['term_years', 'payment_day']);
+
+        $this->assertSame(0, $account->credits()->count());
+    }
+
+    public function test_an_impossible_debit_day_or_term_is_refused(): void
+    {
+        $user = User::factory()->create();
+        $account = Account::factory()->for($user)->create();
+
+        $this->actingAs($user)
+            ->post('/credits', [
+                'account_id' => $account->id,
+                'name' => 'Prêt',
+                'borrowed' => '10 000',
+                'monthly' => '150',
+                'term_years' => 80,
+                'payment_day' => 32,
+            ])
+            ->assertSessionHasErrors(['term_years', 'payment_day']);
+    }
+
+    #[DataProvider('terms')]
+    public function test_the_term_reads_in_years_and_months(int $termMonths, string $expectedLabel): void
+    {
+        $credit = Credit::factory()->over($termMonths, 5)->create();
+
+        $this->assertSame($expectedLabel, $credit->term_label);
+    }
+
+    /**
+     * @return array<string, array{int, string}>
+     */
+    public static function terms(): array
+    {
+        return [
+            'cinq ans' => [60, '5 ans'],
+            'un an' => [12, '1 an'],
+            'huit mois' => [8, '8 mois'],
+            'un an et demi' => [18, '1 an et 6 mois'],
+            'vingt ans et trois mois' => [243, '20 ans et 3 mois'],
+        ];
+    }
+
+    public function test_the_next_payment_is_this_month_when_the_day_is_still_ahead(): void
+    {
+        $this->travelTo(CarbonImmutable::parse('2026-08-04 09:00'));
+
+        $credit = Credit::factory()->over(60, 5)->create();
+
+        $this->assertSame('2026-08-05', $credit->next_payment_on->toDateString());
+    }
+
+    public function test_the_next_payment_rolls_to_the_following_month_once_the_day_has_passed(): void
+    {
+        $this->travelTo(CarbonImmutable::parse('2026-08-06 09:00'));
+
+        $credit = Credit::factory()->over(60, 5)->create();
+
+        $this->assertSame('2026-09-05', $credit->next_payment_on->toDateString());
+    }
+
+    public function test_a_debit_day_beyond_the_month_length_falls_on_its_last_day(): void
+    {
+        $this->travelTo(CarbonImmutable::parse('2026-02-01 09:00'));
+
+        $credit = Credit::factory()->over(60, 31)->create();
+
+        $this->assertSame('2026-02-28', $credit->next_payment_on->toDateString());
+    }
+
+    public function test_it_estimates_the_instalments_left_at_the_current_pace(): void
+    {
+        $credit = Credit::factory()->of(1_420_000, 639_000, 23_650)->create();
+
+        // 6 390 / 236,50 = 27,02 : la dernière mensualité compte.
+        $this->assertSame(28, $credit->remaining_instalments);
+    }
+
+    public function test_a_credit_declared_before_the_schedule_fields_still_shows(): void
+    {
+        $user = User::factory()->create();
+        Credit::factory()->for(Account::factory()->for($user))->withoutSchedule()->create();
+
+        $this->actingAs($user)
+            ->get('/credits')
+            ->assertOk()
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->where('credits.0.term_label', null)
+                ->where('credits.0.payment_day', null)
+                ->where('credits.0.next_payment_label', null)
+                ->etc());
     }
 }

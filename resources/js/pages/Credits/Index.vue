@@ -24,16 +24,36 @@ const form = useForm({
     borrowed: '',
     remaining: '',
     monthly: '',
+    term_years: '',
+    payment_day: '',
 });
 
 function monthlyLabel(credit) {
     return `${plainMoney(credit.monthly_cents)} / mois`;
 }
 
+function debitDaySuffix(credit) {
+    return credit.payment_day === null ? '' : ` · prélevé le ${credit.payment_day}`;
+}
+
+/**
+ * Durée déclarée, mensualités restantes au rythme actuel, prochaine échéance.
+ * Les crédits déclarés avant l'arrivée de ces champs n'affichent que ce qu'ils ont.
+ */
+function scheduleLabel(credit) {
+    return [
+        credit.term_label ? `sur ${credit.term_label}` : null,
+        credit.next_payment_label ? `prochaine le ${credit.next_payment_label}` : null,
+        credit.remaining_instalments === null ? null : `≈ ${credit.remaining_instalments} mensualités restantes`,
+    ]
+        .filter(Boolean)
+        .join(' · ');
+}
+
 function declareCredit() {
     form.post(routes.credits, {
         preserveScroll: true,
-        onSuccess: () => form.reset('name', 'borrowed', 'remaining', 'monthly'),
+        onSuccess: () => form.reset('name', 'borrowed', 'remaining', 'monthly', 'term_years', 'payment_day'),
     });
 }
 
@@ -70,12 +90,7 @@ function deleteCredit(credit) {
                     <div class="flex items-center gap-2.5 lg:gap-3">
                         <!-- L'icône n'apparaît qu'en desktop, comme sur la maquette. -->
                         <PhIcon name="ph-hand-coins" class="hidden text-[18px] text-accent lg:block" />
-                        <div class="min-w-0 flex-1">
-                            <p class="truncate text-[13px] font-medium">{{ credit.name }}</p>
-                            <p class="truncate text-[10px] text-ink-muted lg:text-[11px]">
-                                {{ credit.account_name }} · {{ monthlyLabel(credit) }}
-                            </p>
-                        </div>
+                        <p class="min-w-0 flex-1 truncate text-[13px] font-medium">{{ credit.name }}</p>
                         <div class="shrink-0 text-right">
                             <Amount :cents="credit.remaining_cents" class="block text-[13px] lg:text-[14px]" />
                             <span class="block text-[9px] text-ink-muted lg:text-[10px]">
@@ -92,6 +107,16 @@ function deleteCredit(credit) {
                             <PhIcon name="ph-x" />
                         </button>
                     </div>
+
+                    <!-- Compte, échéance et durée prennent toute la largeur de la carte :
+                         serrées à côté du nom, elles se replieraient sur mobile. -->
+                    <p class="mt-1 text-[10px] text-ink-muted lg:text-[11px]">
+                        {{ credit.account_name }} · {{ monthlyLabel(credit) }}{{ debitDaySuffix(credit) }}
+                    </p>
+                    <p v-if="scheduleLabel(credit)" class="text-[10px] text-ink-faint">
+                        {{ scheduleLabel(credit) }}
+                    </p>
+
                     <CreditProgress :credit="credit" class="mt-2 lg:mt-2.5" />
                 </div>
             </div>
@@ -114,7 +139,7 @@ function deleteCredit(credit) {
                         label="Mensualité"
                         :error="form.errors.monthly"
                         label-desktop-only
-                        class="order-4 col-span-2 lg:order-2 lg:col-span-1"
+                        class="order-6 col-span-2 lg:order-2 lg:col-span-1"
                     >
                         <input
                             v-model="form.monthly"
@@ -152,6 +177,40 @@ function deleteCredit(credit) {
                             inputmode="decimal"
                             class="field lg:bg-page!"
                             placeholder="Capital restant"
+                        />
+                    </FormField>
+
+                    <FormField
+                        label="Durée (années)"
+                        :error="form.errors.term_years"
+                        label-desktop-only
+                        class="order-4 lg:order-5"
+                    >
+                        <input
+                            v-model="form.term_years"
+                            type="number"
+                            inputmode="numeric"
+                            min="1"
+                            max="50"
+                            class="field lg:bg-page!"
+                            placeholder="Durée — ex. 5 ans"
+                        />
+                    </FormField>
+
+                    <FormField
+                        label="Jour de prélèvement"
+                        :error="form.errors.payment_day"
+                        label-desktop-only
+                        class="order-5 lg:order-6"
+                    >
+                        <input
+                            v-model="form.payment_day"
+                            type="number"
+                            inputmode="numeric"
+                            min="1"
+                            max="31"
+                            class="field lg:bg-page!"
+                            placeholder="Prélevé le — ex. 5"
                         />
                     </FormField>
                 </div>

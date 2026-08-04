@@ -10,7 +10,20 @@ const props = defineProps({
 
 const { plainMoney } = useMoney();
 
-const monthlyLabel = computed(() => `${plainMoney(props.credit.monthly_cents)} / mois`);
+/**
+ * Mensualité, jour de prélèvement et durée : ce qu'il faut pour reconnaître
+ * l'échéance sur son relevé. Un crédit déclaré avant ces champs n'affiche que
+ * ce qu'il porte.
+ */
+const scheduleLabel = computed(() =>
+    [
+        `${plainMoney(props.credit.monthly_cents)} / mois`,
+        props.credit.payment_day === null ? null : `prélevé le ${props.credit.payment_day}`,
+        props.credit.term_label ? `sur ${props.credit.term_label}` : null,
+    ]
+        .filter(Boolean)
+        .join(' · '),
+);
 </script>
 
 <template>
@@ -19,7 +32,7 @@ const monthlyLabel = computed(() => `${plainMoney(props.credit.monthly_cents)} /
             <span class="min-w-0 truncate font-medium">{{ props.credit.name }}</span>
             <Amount :cents="props.credit.remaining_cents" class="shrink-0" />
         </div>
-        <p class="mt-px text-[10px] text-ink-muted">{{ monthlyLabel }}</p>
+        <p class="mt-px text-[10px] text-ink-muted">{{ scheduleLabel }}</p>
         <CreditProgress :credit="props.credit" class="mt-[7px] lg:mt-2" />
     </div>
 </template>

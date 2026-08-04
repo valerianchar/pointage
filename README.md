@@ -84,13 +84,26 @@ mobile les affiche et n'est, lui, pas personnalisable — c'est le parti pris de
 
 ## Crédits
 
-Un crédit appartient à un compte et porte un capital emprunté, un capital restant dû et
-une mensualité. La part remboursée n'est jamais stockée : elle se déduit des deux capitaux
-et reste bornée à 0–100 %.
+Un crédit appartient à un compte et porte un capital emprunté, un capital restant dû, une
+mensualité, une durée et le jour du mois où le prélèvement tombe.
+
+Trois valeurs se déduisent au lieu d'être stockées : la part remboursée (bornée à 0–100 %,
+pour qu'un capital saisi de travers ne produise pas de jauge absurde), la prochaine échéance
+(le jour de prélèvement à venir, ramené au dernier jour des mois trop courts — un
+prélèvement au 31 tombe le 28 février) et le nombre de mensualités restantes au rythme
+actuel, qui reste une estimation puisqu'elle ignore les intérêts encore à courir.
+
+La durée est saisie en années et conservée en mois : un prêt de dix-huit mois est déjà
+représentable en base, il ne manque qu'un champ à l'écran.
 
 À la déclaration, un seul des deux capitaux suffit — l'autre s'en déduit, et le crédit
 démarre alors comme s'il n'avait rien remboursé. Un capital restant supérieur au capital
-emprunté est refusé. Les crédits d'un compte apparaissent aussi sur son écran de détail.
+emprunté est refusé, comme une durée au-delà de 50 ans ou un jour hors du 1–31. Les crédits
+d'un compte apparaissent aussi sur son écran de détail.
+
+Un crédit reste déclaratif : sa mensualité ne crée pas d'opération et ne bouge donc pas le
+solde du compte. Pour qu'elle le fasse, il faudrait la brancher sur les modèles récurrents,
+qui savent déjà générer une échéance mensuelle à un jour donné.
 
 ## Opérations récurrentes
 
@@ -149,9 +162,10 @@ hors ligne aux données demanderait une persistance locale chiffrée, qui n'est 
 ./vendor/bin/sail artisan test
 ```
 
-100 tests couvrent l'authentification, le verrouillage, le pointage, la création de comptes,
+113 tests couvrent l'authentification, le verrouillage, le pointage, la création de comptes,
 d'opérations, de tags et de crédits, les autorisations entre profils, la génération des
-récurrentes, le calcul de chaque widget et l'analyse des montants saisis.
+récurrentes, les échéances de crédit, le calcul de chaque widget et l'analyse des montants
+saisis.
 
 ```bash
 ./vendor/bin/sail pint

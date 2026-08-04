@@ -37,6 +37,8 @@ class CreditController extends Controller
             'borrowed_cents' => $request->borrowedCents(),
             'remaining_cents' => $request->remainingCents(),
             'monthly_cents' => $request->monthlyCents(),
+            'term_months' => $request->termMonths(),
+            'payment_day' => $request->integer('payment_day'),
         ]);
 
         return back()->with('success', 'Crédit déclaré.');

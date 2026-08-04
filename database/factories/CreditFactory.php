@@ -24,7 +24,22 @@ class CreditFactory extends Factory
             'borrowed_cents' => 1_000_000,
             'remaining_cents' => 500_000,
             'monthly_cents' => 25_000,
+            'term_months' => 48,
+            'payment_day' => 5,
         ];
+    }
+
+    public function over(int $termMonths, int $paymentDay): static
+    {
+        return $this->state(['term_months' => $termMonths, 'payment_day' => $paymentDay]);
+    }
+
+    /**
+     * Crédit déclaré avant l'arrivée de la durée et du jour de prélèvement.
+     */
+    public function withoutSchedule(): static
+    {
+        return $this->state(['term_months' => null, 'payment_day' => null]);
     }
 
     public function named(string $name): static

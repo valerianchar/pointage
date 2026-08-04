@@ -102,8 +102,22 @@ class DemoDataSeeder extends Seeder
                 'type' => AccountType::Current,
                 'balance_cents' => 234_050,
                 'credits' => [
-                    ['name' => 'Prêt auto', 'borrowed_cents' => 1_420_000, 'remaining_cents' => 639_000, 'monthly_cents' => 23_650],
-                    ['name' => 'Prêt immobilier', 'borrowed_cents' => 18_000_000, 'remaining_cents' => 14_230_000, 'monthly_cents' => 74_500],
+                    [
+                        'name' => 'Prêt auto',
+                        'borrowed_cents' => 1_420_000,
+                        'remaining_cents' => 639_000,
+                        'monthly_cents' => 23_650,
+                        'term_months' => 60,
+                        'payment_day' => 5,
+                    ],
+                    [
+                        'name' => 'Prêt immobilier',
+                        'borrowed_cents' => 18_000_000,
+                        'remaining_cents' => 14_230_000,
+                        'monthly_cents' => 74_500,
+                        'term_months' => 240,
+                        'payment_day' => 10,
+                    ],
                 ],
                 'transactions' => [
                     ['label' => 'Salaire', 'amount_cents' => 240_000, 'tag' => 'Salaire', 'date' => $month, 'pointed' => true, 'recurring' => true],

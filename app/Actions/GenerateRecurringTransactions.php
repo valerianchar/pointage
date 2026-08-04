@@ -4,6 +4,7 @@ namespace App\Actions;
 
 use App\Models\RecurringTransaction;
 use App\Models\Transaction;
+use App\Support\MonthlyDate;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Collection;
 
@@ -69,15 +70,8 @@ final class GenerateRecurringTransactions
             ->pluck('recurring_transaction_id');
     }
 
-    /**
-     * Un modèle réglé sur le 31 tombe le dernier jour des mois plus courts.
-     */
     private function occurrenceDate(CarbonInterface $month, int $dayOfMonth): string
     {
-        $startOfMonth = $month->copy()->startOfMonth();
-
-        return $startOfMonth
-            ->setDay(min($dayOfMonth, $startOfMonth->daysInMonth))
-            ->toDateString();
+        return MonthlyDate::inMonth($month, $dayOfMonth)->toDateString();
     }
 }
