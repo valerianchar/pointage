@@ -4,7 +4,9 @@ use App\Http\Controllers\AccountController;
 use App\Http\Controllers\Auth\AppLockController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\RegisteredUserController;
+use App\Http\Controllers\CreditController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DashboardWidgetController;
 use App\Http\Controllers\PrivacyController;
 use App\Http\Controllers\RecurringTransactionController;
 use App\Http\Controllers\TagController;
@@ -43,6 +45,12 @@ Route::middleware('auth')->group(function () {
             ->name('transactions.pointing');
 
         Route::get('/recurrentes', [RecurringTransactionController::class, 'index'])->name('recurring.index');
+
+        Route::get('/credits', [CreditController::class, 'index'])->name('credits.index');
+        Route::post('/credits', [CreditController::class, 'store'])->name('credits.store');
+        Route::delete('/credits/{credit}', [CreditController::class, 'destroy'])->name('credits.destroy');
+
+        Route::patch('/widgets', [DashboardWidgetController::class, 'update'])->name('widgets.update');
 
         Route::get('/tags', [TagController::class, 'index'])->name('tags.index');
         Route::post('/tags', [TagController::class, 'store'])->name('tags.store');

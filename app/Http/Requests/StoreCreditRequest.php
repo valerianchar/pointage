@@ -1,0 +1,83 @@
+<?php
+
+namespace App\Http\Requests;
+
+use App\Rules\ValidAmount;
+use App\Support\Amount;
+use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
+
+class StoreCreditRequest extends FormRequest
+{
+    /**
+     * @return array<string, mixed>
+     */
+    public function rules(): array
+    {
+        return [
+            'account_id' => [
+                'required',
+                Rule::exists('accounts', 'id')->where('user_id', $this->user()->id),
+            ],
+            'name' => ['required', 'string', 'max:120'],
+            'monthly' => ['required', new ValidAmount(minimumCents: 1)],
+            /*
+             * Un seul des deux capitaux suffit : l'autre s'en déduit, comme sur la
+             * maquette. Un crédit sans aucun capital, en revanche, n'a rien à suivre.
+             */
+            'borrowed' => ['required_without:remaining', 'nullable', new ValidAmount(minimumCents: 1)],
+            'remaining' => ['required_without:borrowed', 'nullable', new ValidAmount(minimumCents: 1)],
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'account_id.required' => 'Choisissez le compte qui porte ce crédit.',
+            'account_id.exists' => 'Ce compte est introuvable.',
+            'name.required' => 'Donnez un nom à ce crédit.',
+            'monthly.required' => 'Saisissez la mensualité.',
+            'borrowed.required_without' => 'Saisissez le capital emprunté ou le capital restant.',
+            'remaining.required_without' => 'Saisissez le capital restant ou le capital emprunté.',
+        ];
+    }
+
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator): void {
+            if ($this->remainingCents() > $this->borrowedCents()) {
+                $validator->errors()->add(
+                    'remaining',
+                    'Le capital restant ne peut pas dépasser le capital emprunté.',
+                );
+            }
+        });
+    }
+
+    public function monthlyCents(): int
+    {
+        return Amount::toCents($this->input('monthly'));
+    }
+
+    /**
+     * À défaut de capital emprunté, on part du capital restant : le crédit démarre
+     * alors comme s'il n'avait rien remboursé.
+     */
+    public function borrowedCents(): int
+    {
+        return Amount::toCents($this->input('borrowed'))
+            ?? Amount::toCents($this->input('remaining'))
+            ?? 0;
+    }
+
+    public function remainingCents(): int
+    {
+        return Amount::toCents($this->input('remaining'))
+            ?? Amount::toCents($this->input('borrowed'))
+            ?? 0;
+    }
+}

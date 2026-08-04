@@ -30,7 +30,9 @@ const bars = computed(() => {
 </script>
 
 <template>
-    <div class="flex h-[34px] items-end gap-[3px] lg:h-14 lg:gap-1.5" role="img" aria-label="Évolution du solde">
+    <!-- Hauteur et espacement sont fixés par l'appelant : le graphe sert autant la
+         carte de l'accueil mobile que le widget desktop, aux dimensions différentes. -->
+    <div class="flex items-end" role="img" aria-label="Évolution du solde">
         <div
             v-for="bar in bars"
             :key="bar.label"

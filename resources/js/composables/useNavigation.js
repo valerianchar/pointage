@@ -3,8 +3,11 @@ import { usePage } from '@inertiajs/vue3';
 import { routes } from '../routes';
 
 /**
- * Les cinq entrées de navigation, partagées par la tab bar mobile et la sidebar
+ * Les six entrées de navigation, partagées par la tab bar mobile et la sidebar
  * desktop. L'onglet « Compte » ouvre le compte affiché, sinon le premier déclaré.
+ *
+ * `shortLabel` est l'étiquette de la tab bar, où six onglets à 9 px laissent peu
+ * de place — la sidebar, elle, affiche le libellé complet.
  */
 export function useNavigation() {
     const page = usePage();
@@ -39,9 +42,16 @@ export function useNavigation() {
         },
         {
             label: 'Récurrentes',
+            shortLabel: 'Récurrent',
             icon: 'ph-arrows-clockwise',
             href: routes.recurring,
             isActive: currentPath.value === routes.recurring,
+        },
+        {
+            label: 'Crédits',
+            icon: 'ph-hand-coins',
+            href: routes.credits,
+            isActive: currentPath.value === routes.credits,
         },
         { label: 'Tags', icon: 'ph-tag', href: routes.tags, isActive: currentPath.value === routes.tags },
     ]);

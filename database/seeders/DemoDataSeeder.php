@@ -50,6 +50,8 @@ class DemoDataSeeder extends Seeder
             $this->seedTransaction($account, $tagsByName, $transaction);
         }
 
+        $account->credits()->createMany($definition['credits'] ?? []);
+
         /*
          * Le solde de la maquette est un solde courant : on en déduit le point de
          * départ du compte pour que solde initial + opérations retombe dessus.
@@ -99,6 +101,10 @@ class DemoDataSeeder extends Seeder
                 'name' => 'Compte principal',
                 'type' => AccountType::Current,
                 'balance_cents' => 234_050,
+                'credits' => [
+                    ['name' => 'Prêt auto', 'borrowed_cents' => 1_420_000, 'remaining_cents' => 639_000, 'monthly_cents' => 23_650],
+                    ['name' => 'Prêt immobilier', 'borrowed_cents' => 18_000_000, 'remaining_cents' => 14_230_000, 'monthly_cents' => 74_500],
+                ],
                 'transactions' => [
                     ['label' => 'Salaire', 'amount_cents' => 240_000, 'tag' => 'Salaire', 'date' => $month, 'pointed' => true, 'recurring' => true],
                     ['label' => 'Loyer', 'amount_cents' => -82_000, 'tag' => 'Loyer', 'date' => $month->addDay(), 'pointed' => true, 'recurring' => true],

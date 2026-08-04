@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\DashboardWidget;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -12,7 +13,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
 
-#[Fillable(['name', 'email', 'password', 'hide_balances'])]
+#[Fillable(['name', 'email', 'password', 'hide_balances', 'dashboard_widgets'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -28,7 +29,23 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'hide_balances' => 'boolean',
+            'dashboard_widgets' => 'array',
         ];
+    }
+
+    /**
+     * Widgets visibles sur l'accueil. Tant que rien n'a été personnalisé, tous le
+     * sont ; un widget retiré du code disparaît des préférences enregistrées.
+     *
+     * @return list<string>
+     */
+    public function enabledDashboardWidgets(): array
+    {
+        if ($this->dashboard_widgets === null) {
+            return DashboardWidget::defaultKeys();
+        }
+
+        return array_values(array_intersect(DashboardWidget::defaultKeys(), $this->dashboard_widgets));
     }
 
     /** @return HasMany<Account, $this> */

@@ -17,18 +17,25 @@
     font-display: block;
 }
 
-.ph {
-    font-family: 'Phosphor' !important;
-    font-style: normal;
-    font-weight: normal;
-    font-variant: normal;
-    line-height: 1;
-    letter-spacing: 0;
-    text-transform: none;
-    display: inline-block;
-    speak: never;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
+/*
+ * Ces règles vivent dans la couche « base » pour que les utilitaires Tailwind
+ * gardent le dernier mot : hors couche, `display: inline-block` battrait un
+ * `hidden` posé sur une icône.
+ */
+@layer base {
+    .ph {
+        font-family: 'Phosphor' !important;
+        font-style: normal;
+        font-weight: normal;
+        font-variant: normal;
+        line-height: 1;
+        letter-spacing: 0;
+        text-transform: none;
+        display: inline-block;
+        speak: never;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
 }
 
 .ph-arrows-clockwise::before { content: '\e094'; }
@@ -39,6 +46,7 @@
 .ph-currency-btc::before { content: '\e618'; }
 .ph-eye::before { content: '\e220'; }
 .ph-eye-slash::before { content: '\e224'; }
+.ph-hand-coins::before { content: '\ea8c'; }
 .ph-house::before { content: '\e2c2'; }
 .ph-lock::before { content: '\e2fa'; }
 .ph-piggy-bank::before { content: '\ea04'; }
@@ -46,6 +54,7 @@
 .ph-plus-circle::before { content: '\e3d6'; }
 .ph-shield-check::before { content: '\e40c'; }
 .ph-sign-out::before { content: '\e42a'; }
+.ph-squares-four::before { content: '\e464'; }
 .ph-tag::before { content: '\e478'; }
 .ph-user-focus::before { content: '\e6fc'; }
 .ph-users::before { content: '\e4d6'; }

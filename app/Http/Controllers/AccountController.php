@@ -6,6 +6,7 @@ use App\Actions\CreateAccount;
 use App\Enums\AccountType;
 use App\Http\Requests\StoreAccountRequest;
 use App\Http\Resources\AccountResource;
+use App\Http\Resources\CreditResource;
 use App\Http\Resources\TransactionResource;
 use App\Models\Account;
 use App\Models\Transaction;
@@ -39,6 +40,7 @@ class AccountController extends Controller
             'month_label' => Str::ucfirst($month->translatedFormat('F Y')),
             'transactions' => TransactionResource::collection($transactions)->resolve(),
             'tag_spending' => $this->tagSpending->forAccountMonth($account, $month),
+            'credits' => CreditResource::collection($account->credits()->orderBy('id')->get())->resolve(),
             'add_url' => route('transactions.create', ['compte' => $account->id]),
         ]);
     }

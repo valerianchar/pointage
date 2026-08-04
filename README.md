@@ -4,7 +4,7 @@ PWA de suivi de comptes bancaires personnels. On déclare ses comptes, on saisit
 et ajouts, on les tague, et on les **pointe** — c'est-à-dire qu'on les rapproche de son
 relevé bancaire. Les opérations récurrentes réapparaissent chaque mois, non pointées.
 
-Deux mises en page pour un même code : mobile (tab bar de cinq onglets) et desktop
+Deux mises en page pour un même code : mobile (tab bar de six onglets) et desktop
 (sidebar de 248 px). Thème « Nocturne » — sombre, dense, accent violet en trait uniquement.
 
 ## Stack
@@ -47,10 +47,11 @@ les opérations du mois et deux mois d'historique pour que le graphe d'évolutio
 | --- | --- |
 | `/connexion`, `/inscription` | Connexion et création de profil |
 | `/verrouillage` | Écran de verrouillage (mot de passe ou biométrie) |
-| `/` | Accueil — patrimoine, flux du mois, évolution du solde, liste des comptes |
-| `/compte/{compte}` | Détail — jauge de pointage, dépenses par tag, opérations |
+| `/` | Accueil — patrimoine, flux du mois, évolution du solde ; grille de widgets sur desktop |
+| `/compte/{compte}` | Détail — jauge de pointage, dépenses par tag, crédits, opérations |
 | `/ajouter` | Ajouter une opération (dépense ou ajout, récurrente ou non) |
 | `/recurrentes` | Instances récurrentes du mois et reste à pointer |
+| `/credits` | Crédits par compte et suivi du capital restant |
 | `/tags` | Tags d'un compte, avec leur nombre d'opérations |
 | `/nouveau-compte` | Déclarer un compte (six types, tags par défaut) |
 
@@ -65,6 +66,31 @@ handoff — 402 px et 1440 px. Elles sont dans [docs/apercus](docs/apercus).
 | Détail de compte | [402 px](docs/apercus/final-account-mobile.png) | [1440 px](docs/apercus/final-account-desktop.png) |
 | Ajouter une opération | [402 px](docs/apercus/final-add-mobile.png) | [1440 px](docs/apercus/final-add-desktop.png) |
 | Récurrentes | [402 px](docs/apercus/final-recurring-mobile.png) | [1440 px](docs/apercus/final-recurring-desktop.png) |
+| Crédits | [402 px](docs/apercus/final-credits-mobile.png) | [1440 px](docs/apercus/final-credits-desktop.png) |
+
+## Accueil personnalisable
+
+Sur desktop, l'accueil est une grille de quatre colonnes où chaque widget en occupe une
+ou deux. Le bouton « Personnaliser » ouvre la liste des widgets disponibles, et le choix
+est enregistré sur le profil — donc suivi d'un appareil à l'autre.
+
+Onze widgets : patrimoine, flux du mois, taux d'épargne, reste à pointer, dépense moyenne
+par jour et projection de fin de mois, charge récurrente, capital restant dû, évolution du
+solde, dépenses par tag tous comptes, top dépenses du mois, répartition par compte.
+
+Un widget masqué n'est pas seulement caché : ses données ne sont pas calculées. Les flux du
+mois et l'évolution du solde restent en revanche toujours envoyés, parce que l'accueil
+mobile les affiche et n'est, lui, pas personnalisable — c'est le parti pris de la maquette.
+
+## Crédits
+
+Un crédit appartient à un compte et porte un capital emprunté, un capital restant dû et
+une mensualité. La part remboursée n'est jamais stockée : elle se déduit des deux capitaux
+et reste bornée à 0–100 %.
+
+À la déclaration, un seul des deux capitaux suffit — l'autre s'en déduit, et le crédit
+démarre alors comme s'il n'avait rien remboursé. Un capital restant supérieur au capital
+emprunté est refusé. Les crédits d'un compte apparaissent aussi sur son écran de détail.
 
 ## Opérations récurrentes
 
@@ -123,9 +149,9 @@ hors ligne aux données demanderait une persistance locale chiffrée, qui n'est 
 ./vendor/bin/sail artisan test
 ```
 
-76 tests couvrent l'authentification, le verrouillage, le pointage, la création de comptes,
-d'opérations et de tags, les autorisations entre profils, la génération des récurrentes et
-l'analyse des montants saisis.
+100 tests couvrent l'authentification, le verrouillage, le pointage, la création de comptes,
+d'opérations, de tags et de crédits, les autorisations entre profils, la génération des
+récurrentes, le calcul de chaque widget et l'analyse des montants saisis.
 
 ```bash
 ./vendor/bin/sail pint

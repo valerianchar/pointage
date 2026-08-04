@@ -2,6 +2,7 @@
 import { computed } from 'vue';
 import { Head, Link } from '@inertiajs/vue3';
 import Amount from '../../components/Amount.vue';
+import CreditSummaryCard from '../../components/CreditSummaryCard.vue';
 import Gauge from '../../components/Gauge.vue';
 import PhIcon from '../../components/PhIcon.vue';
 import TagSpendingBars from '../../components/TagSpendingBars.vue';
@@ -15,6 +16,7 @@ const props = defineProps({
     month_label: { type: String, required: true },
     transactions: { type: Array, required: true },
     tag_spending: { type: Array, required: true },
+    credits: { type: Array, required: true },
     add_url: { type: String, required: true },
 });
 
@@ -64,6 +66,13 @@ const pointingLabel = computed(() =>
                 <TagSpendingBars :spending="props.tag_spending" />
             </div>
         </div>
+
+        <template v-if="props.credits.length > 0">
+            <p class="label-caps mt-4 mb-1.5 lg:mt-[22px] lg:mb-2">Crédits sur ce compte</p>
+            <div class="flex flex-col gap-[7px] lg:grid lg:grid-cols-2 lg:gap-3.5">
+                <CreditSummaryCard v-for="credit in props.credits" :key="credit.id" :credit="credit" />
+            </div>
+        </template>
 
         <div class="mt-4 flex items-baseline justify-between lg:mt-[26px]">
             <p class="label-caps">Opérations — {{ props.month_label.toLowerCase() }}</p>

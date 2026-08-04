@@ -52,6 +52,12 @@ class Account extends Model
         return $this->hasMany(RecurringTransaction::class);
     }
 
+    /** @return HasMany<Credit, $this> */
+    public function credits(): HasMany
+    {
+        return $this->hasMany(Credit::class);
+    }
+
     /**
      * Solde courant en centimes : point de départ plus toutes les opérations.
      *

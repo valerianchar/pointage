@@ -20,7 +20,7 @@ const { items } = useNavigation();
             :aria-current="item.isActive ? 'page' : undefined"
         >
             <PhIcon :name="item.icon" class="text-[21px]" />
-            <span class="text-[9px]">{{ item.label }}</span>
+            <span class="text-[9px]">{{ item.shortLabel ?? item.label }}</span>
         </Link>
     </nav>
 </template>
