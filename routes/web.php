@@ -9,10 +9,17 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DashboardWidgetController;
 use App\Http\Controllers\PrivacyController;
 use App\Http\Controllers\RecurringTransactionController;
+use App\Http\Controllers\ScheduledTaskController;
 use App\Http\Controllers\TagController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\TransactionPointingController;
 use Illuminate\Support\Facades\Route;
+
+/*
+ * Déclencheur des tâches planifiées pour un hébergeur sans cron. Protégé par un
+ * jeton, et inexistant tant qu'aucun jeton n'est configuré.
+ */
+Route::post('/taches/recurrentes', ScheduledTaskController::class)->name('tasks.recurring');
 
 Route::middleware('guest')->group(function () {
     Route::get('/connexion', [AuthenticatedSessionController::class, 'create'])->name('login');

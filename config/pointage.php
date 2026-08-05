@@ -16,4 +16,20 @@ return [
 
     'registration_open' => (bool) env('POINTAGE_REGISTRATION_OPEN', true),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Jeton du déclencheur de tâches
+    |--------------------------------------------------------------------------
+    |
+    | Les offres d'hébergement gratuites n'ont généralement pas de cron. Renseigner
+    | un jeton ouvre une route qui génère les opérations récurrentes du mois, pour
+    | qu'un service de cron externe l'appelle. Laissé vide, la route répond 404 :
+    | le déclencheur n'existe pas.
+    |
+    | Générez-le avec : openssl rand -hex 32
+    |
+    */
+
+    'tasks_token' => env('POINTAGE_TASKS_TOKEN'),
+
 ];

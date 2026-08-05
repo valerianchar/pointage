@@ -28,6 +28,13 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
 
         /*
+         * Le déclencheur de tâches est appelé par un service de cron externe, qui
+         * n'a évidemment pas de jeton de session à présenter. Il s'authentifie par
+         * son propre jeton porteur.
+         */
+        $middleware->validateCsrfTokens(except: ['taches/recurrentes']);
+
+        /*
          * Aucun proxy de confiance n'est déclaré : en production, le serveur qui
          * termine le TLS est l'application elle-même. Faire confiance aux en-têtes
          * X-Forwarded-* permettrait de falsifier l'adresse IP, donc de contourner la

@@ -1,6 +1,13 @@
 #!/bin/sh
 set -e
 
+# Certaines plateformes imposent le port d'écoute par la variable PORT et
+# terminent le TLS devant l'application. On sert alors du HTTP simple sur ce port.
+if [ -n "${PORT:-}" ] && [ -z "${SERVER_NAME:-}" ]; then
+    export SERVER_NAME=":${PORT}"
+    echo "→ écoute sur le port imposé par la plateforme (${PORT})"
+fi
+
 # Un seul conteneur applique les migrations : le planificateur démarre avec la
 # même image et ne doit pas entrer en concurrence avec lui.
 if [ "${MIGRATE_ON_BOOT:-false}" = "true" ]; then

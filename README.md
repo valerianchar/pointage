@@ -36,10 +36,20 @@ Les ports sont réglables dans le `.env` : `APP_PORT`, `VITE_PORT`, `FORWARD_DB_
 
 ### Mise en ligne
 
-[DEPLOIEMENT.md](DEPLOIEMENT.md) décrit l'installation sur une machine Oracle Cloud
-Always Free : HTTPS automatique, cron réel, sauvegardes. La pile de production tient dans
+[DEPLOIEMENT.md](DEPLOIEMENT.md) décrit deux chemins, tous deux gratuits : **Render +
+Neon** — rien à payer, ni carte ni domaine, mais le service s'endort après quinze
+minutes — et **Oracle Cloud Always Free** — toujours allumé, avec un vrai cron, au prix
+d'un domaine gratuit à déclarer et d'une vérification par carte.
+
+Le premier s'appuie sur [render.yaml](render.yaml) et sur un workflow GitHub Actions
+mensuel, puisque l'offre gratuite n'exécute pas de tâche planifiée. Le second sur
 [compose.prod.yaml](compose.prod.yaml) — une image qui sert les fichiers, exécute PHP et
 obtient son certificat, plus le planificateur et la base.
+
+La même image sert les deux : elle écoute sur le port imposé par la plateforme quand il y
+en a un, et le schéma des URL fabriquées se déduit de `APP_URL`. Aucun en-tête
+`X-Forwarded-*` n'est pris pour argent comptant, faute de quoi on pourrait annoncer une
+fausse adresse IP et contourner la limite de tentatives de connexion.
 
 `POINTAGE_REGISTRATION_OPEN=false` ferme les inscriptions : l'écran devient inaccessible et
 son lien disparaît de la page de connexion. Une instance en ligne n'a en général qu'un

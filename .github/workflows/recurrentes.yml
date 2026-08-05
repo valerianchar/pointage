@@ -1,0 +1,34 @@
+# Génère les opérations récurrentes du mois sur une instance hébergée sans cron.
+#
+# Deux secrets à créer dans le dépôt (Settings → Secrets and variables → Actions) :
+#   POINTAGE_URL    l'adresse publique, par exemple https://pointage.onrender.com
+#   POINTAGE_TOKEN  la valeur de POINTAGE_TASKS_TOKEN configurée sur l'hébergeur
+#
+# GitHub désactive les tâches planifiées d'un dépôt resté soixante jours sans
+# activité : le déclenchement manuel ci-dessous permet de les réveiller.
+
+name: Opérations récurrentes
+
+on:
+    schedule:
+        # Le 1er de chaque mois à 00 h 05 UTC.
+        - cron: '5 0 1 * *'
+    workflow_dispatch:
+
+jobs:
+    generer:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Appeler le déclencheur
+              env:
+                  POINTAGE_URL: ${{ secrets.POINTAGE_URL }}
+                  POINTAGE_TOKEN: ${{ secrets.POINTAGE_TOKEN }}
+              # Une offre gratuite endort le service : le premier appel doit
+              # laisser le temps au réveil, d'où les réessais et le délai large.
+              run: |
+                  curl --fail --show-error --silent \
+                    --retry 3 --retry-delay 30 --retry-all-errors \
+                    --max-time 180 \
+                    -X POST \
+                    -H "Authorization: Bearer ${POINTAGE_TOKEN}" \
+                    "${POINTAGE_URL}/taches/recurrentes"

@@ -1,0 +1,71 @@
+# Déploiement gratuit sur Render, avec une base Postgres gratuite hébergée chez
+# Neon. Render fournit le sous-domaine et le certificat ; l'application se contente
+# de servir du HTTP sur le port qu'on lui impose.
+#
+# Les variables marquées « sync: false » ne sont pas dans ce fichier : elles se
+# renseignent dans le tableau de bord Render, pour qu'aucun secret ne soit versionné.
+
+services:
+    - type: web
+      name: pointage
+      runtime: docker
+      plan: free
+      region: frankfurt
+      dockerfilePath: ./Dockerfile
+      healthCheckPath: /up
+      envVars:
+          - key: APP_NAME
+            value: Pointage
+          - key: APP_ENV
+            value: production
+          - key: APP_DEBUG
+            value: 'false'
+          - key: APP_LOCALE
+            value: fr
+          - key: APP_FALLBACK_LOCALE
+            value: fr
+          - key: LOG_CHANNEL
+            value: stack
+          - key: LOG_STACK
+            value: single
+          - key: LOG_LEVEL
+            value: warning
+          - key: DB_CONNECTION
+            value: pgsql
+          - key: SESSION_DRIVER
+            value: database
+          - key: SESSION_SECURE_COOKIE
+            value: 'true'
+          - key: CACHE_STORE
+            value: database
+          - key: QUEUE_CONNECTION
+            value: database
+          # Le conteneur applique les migrations à son démarrage.
+          - key: MIGRATE_ON_BOOT
+            value: 'true'
+
+          # À renseigner dans le tableau de bord.
+          # APP_URL doit être l'adresse publique en https : elle décide du schéma
+          # des URL fabriquées par l'application.
+          - key: APP_URL
+            sync: false
+          - key: APP_KEY
+            sync: false
+          - key: DB_HOST
+            sync: false
+          - key: DB_PORT
+            sync: false
+          - key: DB_DATABASE
+            sync: false
+          - key: DB_USERNAME
+            sync: false
+          - key: DB_PASSWORD
+            sync: false
+          # Neon impose une connexion chiffrée.
+          - key: DB_SSLMODE
+            value: require
+          # Jeton du déclencheur des récurrentes, appelé par un cron externe.
+          - key: POINTAGE_TASKS_TOKEN
+            sync: false
+          - key: POINTAGE_REGISTRATION_OPEN
+            value: 'true'
