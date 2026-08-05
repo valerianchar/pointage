@@ -1,0 +1,10 @@
+# Grafana naît déjà branché sur Prometheus : rien à configurer à la main.
+apiVersion: 1
+
+datasources:
+    - name: Prometheus
+      type: prometheus
+      uid: prometheus
+      access: proxy
+      url: http://prometheus:9090
+      isDefault: true

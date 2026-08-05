@@ -1,0 +1,94 @@
+# Pile d'observation du serveur : Prometheus collecte, Grafana affiche.
+# Indépendante de la pile applicative, comme le proxy et le registre — elle se
+# démarre une fois et survit aux redéploiements.
+#
+# Rien n'est publié directement : node-exporter (la machine), cAdvisor (les
+# conteneurs) et Prometheus vivent sur un réseau interne. Seul Grafana est
+# joignable, via Traefik, derrière son propre écran de connexion.
+#
+# Mise en place, une fois pour toutes :
+#
+#   .env avec MONITORING_DOMAIN et GRAFANA_ADMIN_PASSWORD
+#   docker compose -f compose.monitoring.yaml up -d
+#
+# Premier accès : utilisateur « admin », mot de passe GRAFANA_ADMIN_PASSWORD.
+
+name: monitoring
+
+services:
+    prometheus:
+        image: prom/prometheus:v3.5.0
+        restart: unless-stopped
+        command:
+            - '--config.file=/etc/prometheus/prometheus.yml'
+            - '--storage.tsdb.retention.time=15d'
+        volumes:
+            - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+            - prometheus-data:/prometheus
+        networks:
+            - interne
+            # Le réseau du proxy, uniquement pour lire les métriques de Traefik.
+            - proxy
+
+    # Les métriques de la machine : processeur, mémoire, disque, réseau.
+    node-exporter:
+        image: prom/node-exporter:v1.9.1
+        restart: unless-stopped
+        pid: host
+        command:
+            - '--path.rootfs=/host'
+        volumes:
+            - /:/host:ro,rslave
+        networks:
+            - interne
+
+    # Les métriques par conteneur : la consommation de chaque service.
+    # v0.55 au minimum : les versions antérieures ignorent le magasin d'images
+    # containerd de Docker 29 et perdent le nom des conteneurs.
+    cadvisor:
+        image: gcr.io/cadvisor/cadvisor:v0.55.1
+        restart: unless-stopped
+        volumes:
+            - /:/rootfs:ro
+            - /var/run:/var/run:ro
+            - /sys:/sys:ro
+            - /var/lib/docker:/var/lib/docker:ro
+            - /dev/disk:/dev/disk:ro
+        devices:
+            - /dev/kmsg
+        networks:
+            - interne
+
+    grafana:
+        image: grafana/grafana:12.1.0
+        restart: unless-stopped
+        environment:
+            GF_SECURITY_ADMIN_PASSWORD: '${GRAFANA_ADMIN_PASSWORD}'
+            GF_SERVER_ROOT_URL: 'https://${MONITORING_DOMAIN}'
+            # Personne ne s'inscrit ni n'entre sans compte.
+            GF_USERS_ALLOW_SIGN_UP: 'false'
+            GF_AUTH_ANONYMOUS_ENABLED: 'false'
+        volumes:
+            - grafana-data:/var/lib/grafana
+            # Source de données et tableaux de bord livrés d'avance : Grafana
+            # est utilisable dès le premier démarrage, rien à cliquer.
+            - ./grafana/provisioning:/etc/grafana/provisioning:ro
+            - ./grafana/dashboards:/etc/grafana/dashboards:ro
+        labels:
+            traefik.enable: 'true'
+            traefik.http.routers.grafana.rule: 'Host(`${MONITORING_DOMAIN}`)'
+            traefik.http.routers.grafana.entrypoints: 'websecure'
+            traefik.http.routers.grafana.tls.certresolver: 'le'
+            traefik.http.services.grafana.loadbalancer.server.port: '3000'
+        networks:
+            - interne
+            - proxy
+
+networks:
+    interne:
+    proxy:
+        external: true
+
+volumes:
+    prometheus-data:
+    grafana-data:

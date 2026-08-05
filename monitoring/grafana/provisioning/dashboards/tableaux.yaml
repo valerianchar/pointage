@@ -1,0 +1,10 @@
+# Les tableaux de bord du dossier monitoring/grafana/dashboards sont chargés
+# au démarrage et rechargés s'ils changent sur le disque.
+apiVersion: 1
+
+providers:
+    - name: serveur
+      folder: Serveur
+      type: file
+      options:
+          path: /etc/grafana/dashboards

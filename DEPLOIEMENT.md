@@ -318,9 +318,26 @@ tests échouent.
 Le serveur ne compile rien et n'héberge pas de code source. Il reçoit la description
 de la pile et récupère l'image depuis le registre — un pur environnement d'exécution.
 
-Pour un VPS à 2 Go, la pile mesurée tient dans 700 à 750 Mo au repos. La compilation
-des assets réclame 326 Mo de plus, mais elle a lieu sur GitHub : le serveur n'en voit
-rien.
+Quatre piles indépendantes cohabitent, une par dossier, chacune décrite par un
+fichier compose versionné dans ce dépôt :
+
+```
+/srv
+├── proxy/        compose.proxy.yaml       Traefik : ports 80/443, certificats
+├── registry/     compose.registry.yaml    registre privé, boucle locale seulement
+├── monitoring/   compose.monitoring.yaml  Prometheus + Grafana
+└── pointage/     compose.deploy.yaml      l'application — déposé par la CI
+```
+
+Seule la dernière se redéploie à chaque poussée ; les trois autres se démarrent une
+fois et tournent en continu. Traefik est le seul détenteur des ports 80 et 443 : il
+termine le TLS et route chaque sous-domaine — l'application d'un côté, Grafana de
+l'autre. L'application, elle, sert du HTTP simple derrière lui.
+
+Pour un VPS à 2 Go, la pile applicative mesurée tient dans 700 à 750 Mo au repos ;
+le monitoring ajoute environ 600 Mo — à 2 Go serré, il peut rester éteint. La
+compilation des assets réclame 326 Mo de plus, mais elle a lieu sur GitHub : le
+serveur n'en voit rien.
 
 ## C1. Préparer la machine
 
@@ -376,36 +393,39 @@ ssh -i ~/.ssh/pointage-deploiement deploiement@VOTRE_HOTE 'docker ps'
 
 ## C4. Le domaine
 
-Comme à l'étape [B4](#b4-obtenir-un-nom-de-domaine-gratuit) : DuckDNS pointant vers
-l'IP du VPS, ou votre propre domaine.
-
-## C5. Préparer le dossier de l'application
-
-Le serveur n'héberge **aucun code source** : il ne contient que sa configuration et
-ses volumes. Tout le reste vient du registre, et la description de la pile est
-déposée par la CI à chaque déploiement.
-
-Il suffit donc d'un dossier et d'un fichier d'environnement :
+Comme à l'étape [B4](#b4-obtenir-un-nom-de-domaine-gratuit), avec un sous-domaine de
+plus : l'application et Grafana ont chacun le leur. Avec votre propre domaine, deux
+enregistrements `A` vers l'IP du VPS — par exemple `pointage.exemple.fr` et
+`monitoring.exemple.fr`. Vérifiez la propagation des deux avant le premier
+déploiement, sinon Let's Encrypt refusera les certificats :
 
 ```bash
-sudo install -d -o deploiement -g deploiement /srv/pointage
+dig +short pointage.exemple.fr monitoring.exemple.fr
 ```
 
-Récupérez le modèle et remplissez-le en suivant l'étape [B5](#b5-déployer) pour les
-valeurs — clé d'application, mots de passe de base, domaine, adresse de contact :
+## C5. Le réseau et le reverse proxy
+
+Les piles exposées se rejoignent sur un réseau docker commun, créé une fois pour
+toutes avec un sous-réseau fixe — c'est lui que désigne `TRUSTED_PROXIES` dans la
+configuration de l'application :
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/valerianchar/pointage/main/.env.production.example | sudo -u deploiement tee /srv/pointage/.env > /dev/null && sudo -u deploiement nano /srv/pointage/.env
+sudo -u deploiement docker network create --subnet 172.30.0.0/24 proxy
 ```
 
-Le dossier contiendra à terme trois choses seulement : `.env`, le
-`compose.deploy.yaml` téléversé par la CI, et les volumes Docker — base de données,
-stockage de l'application, certificats.
+Puis Traefik, qui prend les ports 80 et 443 et obtiendra les certificats de tous
+les sous-domaines :
 
-Le planificateur tourne ici dans son propre conteneur. **Désactivez le workflow des
-récurrentes** (onglet Actions → *Opérations récurrentes* → menu ⋯ → *Disable
-workflow*) : sans jeton configuré il échouerait chaque mois pour rien. Vous pouvez
-aussi laisser `POINTAGE_TASKS_TOKEN` vide, la route reste alors inexistante.
+```bash
+sudo install -d -o deploiement -g deploiement /srv/proxy
+curl -fsSL https://raw.githubusercontent.com/valerianchar/pointage/main/compose.proxy.yaml | sudo -u deploiement tee /srv/proxy/compose.proxy.yaml > /dev/null
+echo "TLS_EMAIL=vous@exemple.fr" | sudo -u deploiement tee /srv/proxy/.env > /dev/null
+cd /srv/proxy && sudo -u deploiement docker compose -f compose.proxy.yaml up -d
+```
+
+Dès ce moment, `curl http://IP_DU_VPS` doit répondre — un 404, c'est normal : aucun
+service n'est encore déclaré derrière le proxy. Si rien ne répond, revoyez
+l'étape [C2](#c2-ouvrir-les-ports-80-et-443).
 
 ## C6. Installer le registre d'images
 
@@ -438,7 +458,71 @@ sudo -u deploiement docker login localhost:5000 -u UTILISATEUR
 Le registre n'écoute qu'en boucle locale (`127.0.0.1:5000`) : personne sur Internet
 n'y accède directement, la CI le rejoint par un tunnel SSH.
 
-## C7. Les secrets GitHub
+## C7. Le monitoring
+
+Prometheus collecte les métriques de la machine (node-exporter), de chaque conteneur
+(cAdvisor) et du trafic entrant (Traefik) ; Grafana les affiche sur son sous-domaine,
+derrière son propre écran de connexion. Les tableaux de bord et la source de données
+sont provisionnés d'avance : tout fonctionne au premier démarrage.
+
+La pile a besoin de plusieurs fichiers de configuration — le plus simple est de les
+prendre d'un coup dans le dépôt :
+
+```bash
+git clone --depth 1 https://github.com/valerianchar/pointage.git /tmp/pointage
+sudo install -d -o deploiement -g deploiement /srv/monitoring
+sudo -u deploiement cp -r /tmp/pointage/compose.monitoring.yaml /tmp/pointage/monitoring/. /srv/monitoring/
+rm -rf /tmp/pointage
+```
+
+Le domaine de Grafana et son mot de passe d'administration :
+
+```bash
+cd /srv/monitoring && sudo -u deploiement sh -c 'umask 077 && printf "MONITORING_DOMAIN=monitoring.exemple.fr\nGRAFANA_ADMIN_PASSWORD=%s\n" "$(openssl rand -base64 24)" > .env'
+```
+
+Puis :
+
+```bash
+cd /srv/monitoring && sudo -u deploiement docker compose -f compose.monitoring.yaml up -d
+```
+
+Ouvrez `https://monitoring.exemple.fr` : connectez-vous en `admin` avec le mot de
+passe du `.env` (`sudo -u deploiement cat /srv/monitoring/.env`). Les tableaux
+« Node Exporter Full » (la machine) et « Cadvisor exporter » (les conteneurs)
+attendent dans le dossier *Serveur*.
+
+## C8. Préparer le dossier de l'application
+
+Le serveur n'héberge **aucun code source** : il ne contient que sa configuration et
+ses volumes. Tout le reste vient du registre, et la description de la pile est
+déposée par la CI à chaque déploiement.
+
+Il suffit donc d'un dossier et d'un fichier d'environnement :
+
+```bash
+sudo install -d -o deploiement -g deploiement /srv/pointage
+```
+
+Récupérez le modèle et remplissez-le en suivant l'étape [B5](#b5-déployer) pour les
+valeurs — clé d'application, mots de passe de base, domaine, adresse de contact.
+Gardez `TRUSTED_PROXIES=172.30.0.0/24` tel quel : c'est le sous-réseau du proxy créé
+à l'étape [C5](#c5-le-réseau-et-le-reverse-proxy).
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/valerianchar/pointage/main/.env.production.example | sudo -u deploiement tee /srv/pointage/.env > /dev/null && sudo -u deploiement nano /srv/pointage/.env
+```
+
+Le dossier contiendra à terme trois choses seulement : `.env`, le
+`compose.deploy.yaml` téléversé par la CI, et les volumes Docker — base de données
+et stockage de l'application.
+
+Le planificateur tourne ici dans son propre conteneur. **Désactivez le workflow des
+récurrentes** (onglet Actions → *Opérations récurrentes* → menu ⋯ → *Disable
+workflow*) : sans jeton configuré il échouerait chaque mois pour rien. Vous pouvez
+aussi laisser `POINTAGE_TASKS_TOKEN` vide, la route reste alors inexistante.
+
+## C9. Les secrets GitHub
 
 Dans **Settings → Secrets and variables → Actions** :
 
@@ -459,14 +543,14 @@ son appel. Récupérez-le depuis votre poste :
 ssh-keyscan VOTRE_HOTE
 ```
 
-## C8. Premier déploiement
+## C10. Premier déploiement
 
 Onglet **Actions** → *Déploiement* → **Run workflow**. Ensuite, chaque poussée sur
 `main` déploie. Le workflow attend que l'application
 réponde sur `/up` avant de se déclarer satisfait — un déploiement vert signifie que
 le site est réellement debout.
 
-## C9. Créer votre profil, puis fermer la porte
+## C11. Créer votre profil, puis fermer la porte
 
 Comme à l'étape [B6](#b6-créer-votre-profil-puis-fermer-la-porte). Modifiez `.env` sur
 le serveur, puis relancez la pile — ou poussez un commit, ce qui la relancera aussi.
@@ -488,6 +572,17 @@ docker compose -f compose.prod.yaml logs app | grep -i acme
 
 **La page ne répond pas mais le SSH fonctionne (chemin B).** C'est `iptables`, neuf
 fois sur dix. Revoyez B2 et vérifiez avec `sudo iptables -L INPUT -n`.
+
+**Le certificat n'arrive pas (chemin C).** Même causes qu'au chemin B — DNS pas
+encore propagé, ports fermés — mais les certificats sont l'affaire de Traefik :
+
+```bash
+cd /srv/proxy && docker compose -f compose.proxy.yaml logs traefik | grep -i acme
+```
+
+**502 Bad Gateway sur le site ou sur Grafana (chemin C).** Traefik répond mais ne
+joint pas le service derrière : le conteneur visé est arrêté ou n'a pas rejoint le
+réseau `proxy`. `docker ps` puis `docker network inspect proxy` montrent qui manque.
 
 **MySQL redémarre en boucle sur la micro 1 Go.** Le fichier d'échange manque : B3.
 `free -h` doit montrer 2 Go d'échange.

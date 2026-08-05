@@ -48,9 +48,12 @@ obtient son certificat, plus le planificateur et la base.
 
 Un troisième chemin couvre un VPS loué, avec déploiement continu :
 [.github/workflows/deploiement.yml](.github/workflows/deploiement.yml) enchaîne les tests,
-la publication de l'image sur GHCR et la bascule par SSH, puis attend que `/up` réponde
-avant de se déclarer satisfait. Le serveur ne compile rien — il récupère
-[l'image déjà prête](compose.deploy.yaml), ce qui lui épargne le pic de mémoire des assets.
+la publication de l'image sur un registre privé hébergé par le VPS lui-même et la bascule
+par SSH, puis attend que `/up` réponde avant de se déclarer satisfait. Le serveur ne
+compile rien — il récupère [l'image déjà prête](compose.deploy.yaml), ce qui lui épargne
+le pic de mémoire des assets. En façade, [Traefik](compose.proxy.yaml) termine le TLS
+pour l'application et pour le [monitoring](compose.monitoring.yaml) — Prometheus et
+Grafana, chacun son sous-domaine.
 
 La même image sert les deux : elle écoute sur le port imposé par la plateforme quand il y
 en a un, et le schéma des URL fabriquées se déduit de `APP_URL`. Aucun en-tête

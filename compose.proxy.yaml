@@ -1,0 +1,67 @@
+# Reverse proxy en façade du VPS. Comme le registre, il ne fait pas partie de
+# la pile applicative : on le démarre une fois, à part, et il survit à tous les
+# redéploiements.
+#
+# C'est lui qui détient les ports 80 et 443 et les certificats Let's Encrypt de
+# tous les sous-domaines de la machine. Un service à exposer le déclare par
+# étiquettes (traefik.enable, règle Host…) et rejoint le réseau « proxy »,
+# créé à part avec un sous-réseau fixe — c'est ce sous-réseau que désigne
+# TRUSTED_PROXIES dans le .env de l'application :
+#
+#   docker network create --subnet 172.30.0.0/24 proxy
+#
+# Mise en place, une fois pour toutes :
+#
+#   echo "TLS_EMAIL=vous@exemple.fr" > .env
+#   docker compose -f compose.proxy.yaml up -d
+
+name: proxy
+
+services:
+    traefik:
+        image: traefik:v3
+        restart: unless-stopped
+        environment:
+            # Docker 29 refuse les clients d'API antérieurs à 1.40, et Traefik
+            # se présente par défaut en 1.24 : sans ceci, aucun conteneur n'est
+            # découvert et tout répond 404.
+            DOCKER_API_VERSION: '1.44'
+        command:
+            # Seuls les conteneurs qui le demandent explicitement sont exposés.
+            - '--providers.docker=true'
+            - '--providers.docker.exposedbydefault=false'
+            - '--providers.docker.network=proxy'
+            - '--entrypoints.web.address=:80'
+            - '--entrypoints.websecure.address=:443'
+            - '--entrypoints.websecure.http3'
+            # HTTP n'existe que pour rediriger vers HTTPS et répondre au défi
+            # ACME de Let's Encrypt.
+            - '--entrypoints.web.http.redirections.entrypoint.to=websecure'
+            - '--entrypoints.web.http.redirections.entrypoint.scheme=https'
+            - '--certificatesresolvers.le.acme.email=${TLS_EMAIL}'
+            - '--certificatesresolvers.le.acme.storage=/letsencrypt/acme.json'
+            - '--certificatesresolvers.le.acme.httpchallenge.entrypoint=web'
+            # Métriques lues par Prometheus (compose.monitoring.yaml). Le port
+            # 8082 n'est pas publié : il n'existe que sur le réseau docker.
+            - '--metrics.prometheus=true'
+            - '--entrypoints.metrics.address=:8082'
+            - '--metrics.prometheus.entrypoint=metrics'
+        ports:
+            - '80:80'
+            - '443:443'
+            - '443:443/udp'
+        volumes:
+            # Lecture seule : Traefik observe les conteneurs, il ne les pilote pas.
+            - /var/run/docker.sock:/var/run/docker.sock:ro
+            # Les certificats survivent aux redémarrages : Let's Encrypt limite
+            # le nombre de délivrances par semaine.
+            - letsencrypt:/letsencrypt
+        networks:
+            - proxy
+
+networks:
+    proxy:
+        external: true
+
+volumes:
+    letsencrypt:

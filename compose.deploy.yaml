@@ -5,6 +5,11 @@
 # Le registre (compose.registry.yaml) tourne sur cette même machine, en boucle
 # locale : "localhost:5000" désigne donc ici le registre du VPS, pas celui de la CI.
 #
+# L'application ne détient pas les ports 80/443 : c'est le Traefik du serveur
+# (compose.proxy.yaml) qui termine le TLS et la joint par le réseau « proxy ».
+# Elle sert donc du HTTP simple (SERVER_NAME=:80) et fait confiance aux en-têtes
+# X-Forwarded-* de ce seul réseau — TRUSTED_PROXIES dans le .env.
+#
 # La CI passe l'empreinte exacte à déployer :
 #   POINTAGE_IMAGE=localhost:5000/pointage:<sha> \
 #     docker compose -f compose.deploy.yaml up -d
@@ -19,19 +24,20 @@ services:
         restart: unless-stopped
         env_file: .env
         environment:
-            SERVER_NAME: '${APP_DOMAIN}'
-            TLS_EMAIL: '${TLS_EMAIL}'
+            # HTTP simple : le TLS est l'affaire du proxy.
+            SERVER_NAME: ':80'
             MIGRATE_ON_BOOT: 'true'
-        ports:
-            - '80:80'
-            - '443:443'
-            - '443:443/udp'
+        labels:
+            traefik.enable: 'true'
+            traefik.http.routers.pointage.rule: 'Host(`${APP_DOMAIN}`)'
+            traefik.http.routers.pointage.entrypoints: 'websecure'
+            traefik.http.routers.pointage.tls.certresolver: 'le'
+            traefik.http.services.pointage.loadbalancer.server.port: '80'
         volumes:
             - storage:/app/storage
-            # Les certificats survivent aux déploiements : Let's Encrypt limite le
-            # nombre de délivrances par semaine.
-            - caddy-data:/data
-            - caddy-config:/config
+        networks:
+            - default
+            - proxy
         depends_on:
             mysql:
                 condition: service_healthy
@@ -70,8 +76,11 @@ services:
             retries: 12
             start_period: 40s
 
+networks:
+    # Créé une fois pour toutes avec le proxy — voir compose.proxy.yaml.
+    proxy:
+        external: true
+
 volumes:
     mysql-data:
     storage:
-    caddy-data:
-    caddy-config:

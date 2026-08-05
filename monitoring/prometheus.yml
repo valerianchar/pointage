@@ -1,0 +1,25 @@
+# Ce que Prometheus surveille, toutes les quinze secondes. Les cibles portent
+# les noms des services docker : tout se résout sur les réseaux du compose.
+global:
+    scrape_interval: 15s
+
+scrape_configs:
+    # Prometheus se surveille lui-même.
+    - job_name: prometheus
+      static_configs:
+          - targets: ['localhost:9090']
+
+    # La machine : processeur, mémoire, disque, réseau.
+    - job_name: machine
+      static_configs:
+          - targets: ['node-exporter:9100']
+
+    # Les conteneurs, un par un.
+    - job_name: conteneurs
+      static_configs:
+          - targets: ['cadvisor:8080']
+
+    # Le trafic entrant : requêtes, codes de réponse, latences par service.
+    - job_name: traefik
+      static_configs:
+          - targets: ['traefik:8082']
