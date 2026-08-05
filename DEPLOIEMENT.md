@@ -311,8 +311,12 @@ cd ~/pointage && git pull && docker compose -f compose.prod.yaml up -d --build
 
 Chaque poussée sur `main` déclenche
 [.github/workflows/deploiement.yml](.github/workflows/deploiement.yml) : la suite de
-tests, puis la construction et la publication de l'image, puis la bascule sur le
-serveur. Rien n'est déployé si les tests échouent, et le serveur ne compile rien.
+tests, puis la construction et la publication de l'image sur un registre privé qui
+tourne sur le VPS lui-même, puis la bascule sur le serveur. Rien n'est déployé si les
+tests échouent.
+
+Le serveur ne compile rien et n'héberge pas de code source. Il reçoit la description
+de la pile et récupère l'image depuis le registre — un pur environnement d'exécution.
 
 Pour un VPS à 2 Go, la pile mesurée tient dans 700 à 750 Mo au repos. La compilation
 des assets réclame 326 Mo de plus, mais elle a lieu sur GitHub : le serveur n'en voit
@@ -375,41 +379,64 @@ ssh -i ~/.ssh/pointage-deploiement deploiement@VOTRE_HOTE 'docker ps'
 Comme à l'étape [B4](#b4-obtenir-un-nom-de-domaine-gratuit) : DuckDNS pointant vers
 l'IP du VPS, ou votre propre domaine.
 
-## C5. Installer l'application une première fois
+## C5. Préparer le dossier de l'application
 
-En tant qu'utilisateur de déploiement, dans `/srv/pointage` :
+Le serveur n'héberge **aucun code source** : il ne contient que sa configuration et
+ses volumes. Tout le reste vient du registre, et la description de la pile est
+déposée par la CI à chaque déploiement.
+
+Il suffit donc d'un dossier et d'un fichier d'environnement :
 
 ```bash
-sudo install -d -o deploiement -g deploiement /srv/pointage && sudo -u deploiement git clone https://github.com/valerianchar/pointage.git /srv/pointage
+sudo install -d -o deploiement -g deploiement /srv/pointage
 ```
 
-Créez le fichier d'environnement, en suivant l'étape [B5](#b5-déployer) pour les
+Récupérez le modèle et remplissez-le en suivant l'étape [B5](#b5-déployer) pour les
 valeurs — clé d'application, mots de passe de base, domaine, adresse de contact :
 
 ```bash
-sudo -u deploiement cp /srv/pointage/.env.production.example /srv/pointage/.env && sudo -u deploiement nano /srv/pointage/.env
+curl -fsSL https://raw.githubusercontent.com/valerianchar/pointage/main/.env.production.example | sudo -u deploiement tee /srv/pointage/.env > /dev/null && sudo -u deploiement nano /srv/pointage/.env
 ```
+
+Le dossier contiendra à terme trois choses seulement : `.env`, le
+`compose.deploy.yaml` téléversé par la CI, et les volumes Docker — base de données,
+stockage de l'application, certificats.
 
 Le planificateur tourne ici dans son propre conteneur. **Désactivez le workflow des
 récurrentes** (onglet Actions → *Opérations récurrentes* → menu ⋯ → *Disable
 workflow*) : sans jeton configuré il échouerait chaque mois pour rien. Vous pouvez
 aussi laisser `POINTAGE_TASKS_TOKEN` vide, la route reste alors inexistante.
 
-## C6. Rendre l'image accessible au serveur
+## C6. Installer le registre d'images
 
-Les images publiées sur GHCR sont privées par défaut, même depuis un dépôt public.
-Après le premier passage de la CI, sur `github.com/valerianchar?tab=packages` →
-`pointage` → *Package settings* → *Change visibility* → **Public**.
-
-L'image ne contient aucun secret : le fichier `.env` est exclu de sa construction,
-seuls les modèles d'exemple y figurent.
-
-Si vous préférez la garder privée, authentifiez le serveur une fois pour toutes avec
-un jeton personnel ayant la portée `read:packages` :
+Contrairement à GHCR, ce registre n'existe nulle part tant qu'on ne le démarre pas :
+c'est un conteneur de plus sur le VPS, indépendant de la pile applicative — il ne se
+redéploie jamais, il tourne simplement en continu à côté.
 
 ```bash
-sudo -u deploiement docker login ghcr.io -u valerianchar
+sudo install -d -o deploiement -g deploiement /srv/registry
+curl -fsSL https://raw.githubusercontent.com/valerianchar/pointage/main/compose.registry.yaml | sudo -u deploiement tee /srv/registry/compose.registry.yaml > /dev/null
+sudo -u deploiement mkdir -p /srv/registry/auth
 ```
+
+Choisissez un utilisateur et un mot de passe pour le registre — ce sont eux qui
+deviendront les secrets `REGISTRY_USER` et `REGISTRY_PASSWORD` à l'étape suivante :
+
+```bash
+cd /srv/registry && sudo -u deploiement sh -c 'docker run --rm --entrypoint htpasswd httpd:2 -Bbn UTILISATEUR MOTDEPASSE > auth/htpasswd'
+```
+
+Démarrez-le, puis authentifiez le serveur une fois pour toutes — c'est ce qui permet
+à `docker compose pull` de fonctionner sans secret supplémentaire à chaque
+déploiement :
+
+```bash
+cd /srv/registry && sudo -u deploiement docker compose -f compose.registry.yaml up -d
+sudo -u deploiement docker login localhost:5000 -u UTILISATEUR
+```
+
+Le registre n'écoute qu'en boucle locale (`127.0.0.1:5000`) : personne sur Internet
+n'y accède directement, la CI le rejoint par un tunnel SSH.
 
 ## C7. Les secrets GitHub
 
@@ -421,6 +448,8 @@ Dans **Settings → Secrets and variables → Actions** :
 | `VPS_USER` | `deploiement` |
 | `VPS_SSH_KEY` | le contenu **entier** de `~/.ssh/pointage-deploiement`, clé privée |
 | `VPS_KNOWN_HOSTS` | la sortie de `ssh-keyscan VOTRE_HOTE` |
+| `REGISTRY_USER` | l'utilisateur choisi à l'étape [C6](#c6-installer-le-registre-dimages) |
+| `REGISTRY_PASSWORD` | le mot de passe correspondant |
 | `APP_HEALTH_URL` | la même adresse que `APP_URL` |
 
 `VPS_KNOWN_HOSTS` évite que la CI fasse confiance au premier serveur qui répond à
@@ -432,11 +461,8 @@ ssh-keyscan VOTRE_HOTE
 
 ## C8. Premier déploiement
 
-Onglet **Actions** → *Déploiement* → **Run workflow**. Le premier passage échouera
-probablement à l'étape de récupération de l'image, tant que le paquet est privé :
-faites l'étape C6, puis relancez.
-
-Ensuite, chaque poussée sur `main` déploie. Le workflow attend que l'application
+Onglet **Actions** → *Déploiement* → **Run workflow**. Ensuite, chaque poussée sur
+`main` déploie. Le workflow attend que l'application
 réponde sur `/up` avant de se déclarer satisfait — un déploiement vert signifie que
 le site est réellement debout.
 
@@ -477,8 +503,16 @@ sessions : la page se recharge avec un jeton neuf, réessayez.
 renseignez `POINTAGE_TASKS_TOKEN`. Un 403 signifie que le jeton présenté ne
 correspond pas.
 
-**Le déploiement échoue sur « manifest unknown » ou « denied » (chemin C).** Le paquet
-GHCR est encore privé : étape C6.
+**Le déploiement échoue sur « manifest unknown », « denied » ou « unauthorized »
+(chemin C).** Soit le registre n'a pas encore été démarré ou authentifié — étape C6 —
+soit `REGISTRY_USER` et `REGISTRY_PASSWORD` ne correspondent pas au fichier
+`auth/htpasswd` généré sur le serveur.
+
+**Le déploiement échoue sur la connexion au tunnel du registre (chemin C).**
+Vérifiez que `compose.registry.yaml` tourne sur le VPS
+(`docker compose -f /srv/registry/compose.registry.yaml ps`) et que `VPS_HOST`,
+`VPS_USER` et les clés SSH sont corrects : le tunnel emprunte la même connexion que
+le reste du déploiement.
 
 **Le déploiement échoue sur l'hôte SSH (chemin C).** `VPS_KNOWN_HOSTS` ne correspond
 plus — c'est normal après une réinstallation de la machine, qui change sa clé d'hôte.

@@ -2,9 +2,16 @@
 # registre. Le serveur ne compile rien : il économise le pic de mémoire du build et
 # la bascule ne prend que quelques secondes.
 #
+# Le registre (compose.registry.yaml) tourne sur cette même machine, en boucle
+# locale : "localhost:5000" désigne donc ici le registre du VPS, pas celui de la CI.
+#
 # La CI passe l'empreinte exacte à déployer :
-#   POINTAGE_IMAGE=ghcr.io/valerianchar/pointage:<sha> \
+#   POINTAGE_IMAGE=localhost:5000/pointage:<sha> \
 #     docker compose -f compose.deploy.yaml up -d
+
+# Nom de projet figé : les volumes ne dépendent pas du nom du dossier, qui pourrait
+# être renommé sans qu'on veuille perdre la base.
+name: pointage
 
 services:
     app:

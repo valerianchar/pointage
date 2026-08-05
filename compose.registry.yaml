@@ -1,0 +1,35 @@
+# Registre d'images privé, propre au VPS. Il ne fait pas partie de la pile
+# applicative : on le démarre une fois, à part, et il survit à tous les
+# redéploiements de compose.deploy.yaml.
+#
+# Il n'écoute que sur la boucle locale de la machine — jamais sur Internet. La CI
+# l'atteint par un tunnel SSH ; le serveur, en local, y accède directement.
+#
+# Mise en place, une fois pour toutes :
+#
+#   mkdir -p auth
+#   docker run --rm --entrypoint htpasswd httpd:2 -Bbn UTILISATEUR MOTDEPASSE > auth/htpasswd
+#   docker compose -f compose.registry.yaml up -d
+#   docker login localhost:5000 -u UTILISATEUR
+#
+# Ce dernier login met en cache les identifiants pour l'utilisateur système courant :
+# les déploiements suivants n'ont plus besoin de s'authentifier.
+
+name: registry
+
+services:
+    registry:
+        image: registry:2
+        restart: unless-stopped
+        ports:
+            - '127.0.0.1:5000:5000'
+        environment:
+            REGISTRY_AUTH: htpasswd
+            REGISTRY_AUTH_HTPASSWD_REALM: pointage
+            REGISTRY_AUTH_HTPASSWD_PATH: /auth/htpasswd
+        volumes:
+            - registry-data:/var/lib/registry
+            - ./auth:/auth:ro
+
+volumes:
+    registry-data:
