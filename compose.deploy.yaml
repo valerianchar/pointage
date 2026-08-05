@@ -47,6 +47,10 @@ services:
         restart: unless-stopped
         env_file: .env
         entrypoint: ['php', 'artisan', 'schedule:work']
+        healthcheck:
+            # Celui de l'image sonde Caddy, qui ne tourne pas ici : le
+            # planificateur n'est qu'une boucle artisan.
+            disable: true
         volumes:
             - storage:/app/storage
         depends_on:
