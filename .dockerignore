@@ -23,6 +23,8 @@ tests
 docs
 compose.yaml
 compose.prod.yaml
+compose.deploy.yaml
+render.yaml
 Dockerfile
 .dockerignore
 README.md

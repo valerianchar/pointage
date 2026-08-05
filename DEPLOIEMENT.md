@@ -6,6 +6,12 @@ Deux chemins, selon ce que vous préférez céder — de l'argent ou du confort.
 | --- | --- | --- | --- |
 | **A — Render + Neon** | rien | non, s'endort après 15 min | ~30 min |
 | **B — Oracle Cloud Always Free** | rien, mais carte bancaire vérifiée | oui | ~1 h |
+| **C — VPS louté + déploiement continu** | le prix du VPS | oui | ~1 h, puis chaque push déploie |
+
+Le chemin C convient à un VPS acheté chez n'importe qui — IONOS, Hetzner, Scaleway. Il
+ajoute une intégration continue : les tests passent, l'image se construit sur GitHub, et
+le serveur se contente de la récupérer. Sur une petite machine c'est décisif, le pic de
+mémoire de la compilation des assets ne lui incombe plus.
 
 Le chemin A ne demande ni carte bancaire, ni nom de domaine, ni machine : Render
 fournit un sous-domaine `*.onrender.com` avec son certificat. En échange, le service
@@ -301,6 +307,149 @@ cd ~/pointage && git pull && docker compose -f compose.prod.yaml up -d --build
 
 ---
 
+# Chemin C — VPS avec déploiement continu
+
+Chaque poussée sur `main` déclenche
+[.github/workflows/deploiement.yml](.github/workflows/deploiement.yml) : la suite de
+tests, puis la construction et la publication de l'image, puis la bascule sur le
+serveur. Rien n'est déployé si les tests échouent, et le serveur ne compile rien.
+
+Pour un VPS à 2 Go, la pile mesurée tient dans 700 à 750 Mo au repos. La compilation
+des assets réclame 326 Mo de plus, mais elle a lieu sur GitHub : le serveur n'en voit
+rien.
+
+## C1. Préparer la machine
+
+Commandez une machine avec Ubuntu 24.04. Deux vCores et 2 Go suffisent largement.
+Puis, en SSH, le fichier d'échange et Docker — mêmes commandes qu'aux étapes
+[B3](#b3-préparer-la-machine).
+
+## C2. Ouvrir les ports 80 et 443
+
+Comme à l'étape [B2](#b2-ouvrir-les-ports-80-et-443), mais l'endroit change selon
+l'hébergeur : chez IONOS, les règles se posent dans le pare-feu du panneau
+d'administration. Vérifiez ensuite qu'aucun filtrage ne subsiste sur la machine :
+
+```bash
+sudo iptables -L INPUT -n | head -20
+```
+
+Si vous y voyez une règle `REJECT` ou `DROP`, appliquez les commandes `iptables` de
+l'étape B2.
+
+## C3. Créer l'utilisateur de déploiement
+
+La CI se connectera avec sa propre clé et son propre compte, sans mot de passe et
+sans privilèges au-delà de Docker.
+
+Sur **votre poste**, une paire de clés dédiée — distincte de celle qui vous sert à
+vous connecter :
+
+```bash
+ssh-keygen -t ed25519 -f ~/.ssh/pointage-deploiement -C "deploiement-pointage" -N ""
+```
+
+Sur le **serveur** :
+
+```bash
+sudo adduser --disabled-password --gecos "" deploiement && sudo usermod -aG docker deploiement && sudo install -d -m 700 -o deploiement -g deploiement /home/deploiement/.ssh
+```
+
+Recopiez-y la clé publique — le contenu de `~/.ssh/pointage-deploiement.pub` :
+
+```bash
+sudo -u deploiement tee /home/deploiement/.ssh/authorized_keys > /dev/null <<'EOF'
+ssh-ed25519 AAAA...remplacez-par-votre-clé-publique deploiement-pointage
+EOF
+sudo chmod 600 /home/deploiement/.ssh/authorized_keys
+```
+
+Vérifiez depuis votre poste que la connexion passe :
+
+```bash
+ssh -i ~/.ssh/pointage-deploiement deploiement@VOTRE_HOTE 'docker ps'
+```
+
+## C4. Le domaine
+
+Comme à l'étape [B4](#b4-obtenir-un-nom-de-domaine-gratuit) : DuckDNS pointant vers
+l'IP du VPS, ou votre propre domaine.
+
+## C5. Installer l'application une première fois
+
+En tant qu'utilisateur de déploiement, dans `/srv/pointage` :
+
+```bash
+sudo install -d -o deploiement -g deploiement /srv/pointage && sudo -u deploiement git clone https://github.com/valerianchar/pointage.git /srv/pointage
+```
+
+Créez le fichier d'environnement, en suivant l'étape [B5](#b5-déployer) pour les
+valeurs — clé d'application, mots de passe de base, domaine, adresse de contact :
+
+```bash
+sudo -u deploiement cp /srv/pointage/.env.production.example /srv/pointage/.env && sudo -u deploiement nano /srv/pointage/.env
+```
+
+Le planificateur tourne ici dans son propre conteneur. **Désactivez le workflow des
+récurrentes** (onglet Actions → *Opérations récurrentes* → menu ⋯ → *Disable
+workflow*) : sans jeton configuré il échouerait chaque mois pour rien. Vous pouvez
+aussi laisser `POINTAGE_TASKS_TOKEN` vide, la route reste alors inexistante.
+
+## C6. Rendre l'image accessible au serveur
+
+Les images publiées sur GHCR sont privées par défaut, même depuis un dépôt public.
+Après le premier passage de la CI, sur `github.com/valerianchar?tab=packages` →
+`pointage` → *Package settings* → *Change visibility* → **Public**.
+
+L'image ne contient aucun secret : le fichier `.env` est exclu de sa construction,
+seuls les modèles d'exemple y figurent.
+
+Si vous préférez la garder privée, authentifiez le serveur une fois pour toutes avec
+un jeton personnel ayant la portée `read:packages` :
+
+```bash
+sudo -u deploiement docker login ghcr.io -u valerianchar
+```
+
+## C7. Les secrets GitHub
+
+Dans **Settings → Secrets and variables → Actions** :
+
+| Secret | Valeur |
+| --- | --- |
+| `VPS_HOST` | l'adresse ou le nom d'hôte du serveur |
+| `VPS_USER` | `deploiement` |
+| `VPS_SSH_KEY` | le contenu **entier** de `~/.ssh/pointage-deploiement`, clé privée |
+| `VPS_KNOWN_HOSTS` | la sortie de `ssh-keyscan VOTRE_HOTE` |
+| `APP_HEALTH_URL` | la même adresse que `APP_URL` |
+
+`VPS_KNOWN_HOSTS` évite que la CI fasse confiance au premier serveur qui répond à
+son appel. Récupérez-le depuis votre poste :
+
+```bash
+ssh-keyscan VOTRE_HOTE
+```
+
+## C8. Premier déploiement
+
+Onglet **Actions** → *Déploiement* → **Run workflow**. Le premier passage échouera
+probablement à l'étape de récupération de l'image, tant que le paquet est privé :
+faites l'étape C6, puis relancez.
+
+Ensuite, chaque poussée sur `main` déploie. Le workflow attend que l'application
+réponde sur `/up` avant de se déclarer satisfait — un déploiement vert signifie que
+le site est réellement debout.
+
+## C9. Créer votre profil, puis fermer la porte
+
+Comme à l'étape [B6](#b6-créer-votre-profil-puis-fermer-la-porte). Modifiez `.env` sur
+le serveur, puis relancez la pile — ou poussez un commit, ce qui la relancera aussi.
+
+Les sauvegardes de l'étape [B8](#b8-sauvegardes) s'appliquent telles quelles, en
+remplaçant `compose.prod.yaml` par `compose.deploy.yaml`.
+
+---
+
 # Dépannage
 
 **Le certificat n'arrive pas (chemin B).** Le domaine doit pointer vers l'IP *avant*
@@ -328,6 +477,13 @@ sessions : la page se recharge avec un jeton neuf, réessayez.
 renseignez `POINTAGE_TASKS_TOKEN`. Un 403 signifie que le jeton présenté ne
 correspond pas.
 
+**Le déploiement échoue sur « manifest unknown » ou « denied » (chemin C).** Le paquet
+GHCR est encore privé : étape C6.
+
+**Le déploiement échoue sur l'hôte SSH (chemin C).** `VPS_KNOWN_HOSTS` ne correspond
+plus — c'est normal après une réinstallation de la machine, qui change sa clé d'hôte.
+Régénérez le secret avec `ssh-keyscan`.
+
 **Lancer une commande à la main.**
 
 ```bash
@@ -336,4 +492,7 @@ php artisan transactions:generate-recurring
 
 # chemin B
 docker compose -f compose.prod.yaml exec app php artisan transactions:generate-recurring
+
+# chemin C
+cd /srv/pointage && docker compose -f compose.deploy.yaml exec app php artisan transactions:generate-recurring
 ```

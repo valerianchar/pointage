@@ -46,6 +46,12 @@ mensuel, puisque l'offre gratuite n'exécute pas de tâche planifiée. Le second
 [compose.prod.yaml](compose.prod.yaml) — une image qui sert les fichiers, exécute PHP et
 obtient son certificat, plus le planificateur et la base.
 
+Un troisième chemin couvre un VPS loué, avec déploiement continu :
+[.github/workflows/deploiement.yml](.github/workflows/deploiement.yml) enchaîne les tests,
+la publication de l'image sur GHCR et la bascule par SSH, puis attend que `/up` réponde
+avant de se déclarer satisfait. Le serveur ne compile rien — il récupère
+[l'image déjà prête](compose.deploy.yaml), ce qui lui épargne le pic de mémoire des assets.
+
 La même image sert les deux : elle écoute sur le port imposé par la plateforme quand il y
 en a un, et le schéma des URL fabriquées se déduit de `APP_URL`. Aucun en-tête
 `X-Forwarded-*` n'est pris pour argent comptant, faute de quoi on pourrait annoncer une

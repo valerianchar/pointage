@@ -1,0 +1,70 @@
+# Pile de production alimentée par une image déjà construite, récupérée depuis le
+# registre. Le serveur ne compile rien : il économise le pic de mémoire du build et
+# la bascule ne prend que quelques secondes.
+#
+# La CI passe l'empreinte exacte à déployer :
+#   POINTAGE_IMAGE=ghcr.io/valerianchar/pointage:<sha> \
+#     docker compose -f compose.deploy.yaml up -d
+
+services:
+    app:
+        image: '${POINTAGE_IMAGE:-ghcr.io/valerianchar/pointage:latest}'
+        restart: unless-stopped
+        env_file: .env
+        environment:
+            SERVER_NAME: '${APP_DOMAIN}'
+            TLS_EMAIL: '${TLS_EMAIL}'
+            MIGRATE_ON_BOOT: 'true'
+        ports:
+            - '80:80'
+            - '443:443'
+            - '443:443/udp'
+        volumes:
+            - storage:/app/storage
+            # Les certificats survivent aux déploiements : Let's Encrypt limite le
+            # nombre de délivrances par semaine.
+            - caddy-data:/data
+            - caddy-config:/config
+        depends_on:
+            mysql:
+                condition: service_healthy
+
+    scheduler:
+        image: '${POINTAGE_IMAGE:-ghcr.io/valerianchar/pointage:latest}'
+        restart: unless-stopped
+        env_file: .env
+        entrypoint: ['php', 'artisan', 'schedule:work']
+        volumes:
+            - storage:/app/storage
+        depends_on:
+            app:
+                condition: service_started
+            mysql:
+                condition: service_healthy
+
+    mysql:
+        image: mysql:8.4
+        restart: unless-stopped
+        environment:
+            MYSQL_DATABASE: '${DB_DATABASE}'
+            MYSQL_USER: '${DB_USERNAME}'
+            MYSQL_PASSWORD: '${DB_PASSWORD}'
+            MYSQL_ROOT_PASSWORD: '${DB_ROOT_PASSWORD}'
+        command:
+            - '--innodb-buffer-pool-size=128M'
+            - '--performance-schema=OFF'
+            - '--innodb-flush-method=O_DIRECT'
+        volumes:
+            - mysql-data:/var/lib/mysql
+        healthcheck:
+            test: ['CMD', 'mysqladmin', 'ping', '-p${DB_PASSWORD}']
+            interval: 10s
+            timeout: 5s
+            retries: 12
+            start_period: 40s
+
+volumes:
+    mysql-data:
+    storage:
+    caddy-data:
+    caddy-config:
