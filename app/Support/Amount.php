@@ -13,6 +13,12 @@ final class Amount
     private const SEPARATORS_TO_STRIP = [' ', "\u{00A0}", "\u{202F}", '€'];
 
     /**
+     * Un milliard d'euros : au-delà, la saisie est forcément une erreur, et des
+     * valeurs démesurées fausseraient les agrégats ou déborderaient l'entier.
+     */
+    private const MAXIMUM_CENTS = 100_000_000_000;
+
+    /**
      * Renvoie le montant en centimes, ou null si la saisie n'est pas un nombre.
      */
     public static function toCents(?string $rawAmount): ?int
@@ -25,11 +31,19 @@ final class Amount
 
         $decimal = self::normalizeSeparators($stripped);
 
-        if (! is_numeric($decimal)) {
+        // Personne n'écrit un montant en notation scientifique : « 1e15 »
+        // passerait is_numeric mais n'est pas une saisie, on la refuse.
+        if (! is_numeric($decimal) || str_contains(strtolower($decimal), 'e')) {
             return null;
         }
 
-        return (int) round(((float) $decimal) * 100);
+        $cents = round(((float) $decimal) * 100);
+
+        if (! is_finite($cents) || abs($cents) > self::MAXIMUM_CENTS) {
+            return null;
+        }
+
+        return (int) $cents;
     }
 
     /**

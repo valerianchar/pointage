@@ -55,6 +55,38 @@ class BugReportTest extends TestCase
         $this->assertSame('Le graphique de l\'accueil disparaît quan…', BugReport::sole()->subject);
     }
 
+    public function test_a_multiline_subject_is_flattened_before_reaching_the_mail_header(): void
+    {
+        Notification::fake();
+
+        $this->actingAs(User::factory()->create())
+            ->post('/signalements', [
+                'subject' => "Première ligne\r\nSeconde ligne",
+                'description' => 'Peu importe.',
+            ])
+            ->assertRedirect();
+
+        $this->assertSame('Première ligne Seconde ligne', BugReport::sole()->subject);
+    }
+
+    public function test_reports_are_rate_limited(): void
+    {
+        Notification::fake();
+        $user = User::factory()->create();
+
+        foreach (range(1, 5) as $attempt) {
+            $this->actingAs($user)
+                ->post('/signalements', ['description' => "Signalement {$attempt}"])
+                ->assertRedirect();
+        }
+
+        $this->actingAs($user)
+            ->post('/signalements', ['description' => 'Un de trop dans la même minute.'])
+            ->assertTooManyRequests();
+
+        $this->assertSame(5, BugReport::count());
+    }
+
     public function test_the_description_is_required(): void
     {
         $this->actingAs(User::factory()->create())

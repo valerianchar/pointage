@@ -29,6 +29,7 @@ class AmountTest extends TestCase
             'entier' => ['200', 20_000],
             'négatif' => ['-820', -82_000],
             'arrondi au centime' => ['0,015', 2],
+            'plafond du milliard' => ['1000000000', 100_000_000_000],
         ];
     }
 
@@ -49,6 +50,10 @@ class AmountTest extends TestCase
             'texte' => ['abc'],
             'deux virgules' => ['1,2,3'],
             'symbole seul' => ['€'],
+            'notation scientifique' => ['1e15'],
+            'nombre démesuré' => ['1e308'],
+            'au-delà du milliard' => ['1000000001'],
+            'négatif au-delà du milliard' => ['-1000000001'],
         ];
     }
 }

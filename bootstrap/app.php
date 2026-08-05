@@ -35,12 +35,24 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->validateCsrfTokens(except: ['taches/recurrentes']);
 
         /*
-         * Aucun proxy de confiance n'est déclaré : en production, le serveur qui
-         * termine le TLS est l'application elle-même. Faire confiance aux en-têtes
-         * X-Forwarded-* permettrait de falsifier l'adresse IP, donc de contourner la
-         * limite de tentatives de connexion. Un CDN placé devant plus tard devra
-         * être déclaré ici, nommément.
+         * Sur le VPS, le serveur qui termine le TLS est l'application elle-même :
+         * aucun proxy n'est déclaré par défaut. Faire confiance aux en-têtes
+         * X-Forwarded-* permettrait sinon de falsifier l'adresse IP, donc de
+         * contourner la limite de tentatives de connexion.
+         *
+         * Sur un hébergeur qui place son propre proxy devant (Render…), c'est
+         * l'inverse : sans TRUSTED_PROXIES, tous les visiteurs partagent l'adresse
+         * IP du proxy — le blocage de connexion devient global, et un inconnu peut
+         * verrouiller l'e-mail du propriétaire à distance. Renseignez alors « * »,
+         * ou une liste d'adresses séparées par des virgules.
          */
+        $trustedProxies = env('TRUSTED_PROXIES');
+
+        if (is_string($trustedProxies) && $trustedProxies !== '') {
+            $middleware->trustProxies(
+                at: $trustedProxies === '*' ? '*' : array_map('trim', explode(',', $trustedProxies)),
+            );
+        }
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

@@ -20,6 +20,17 @@ class ScheduledTaskTriggerTest extends TestCase
         $this->postJson('/taches/recurrentes')->assertNotFound();
     }
 
+    public function test_the_trigger_is_rate_limited(): void
+    {
+        config(['pointage.tasks_token' => self::TOKEN]);
+
+        foreach (range(1, 6) as $attempt) {
+            $this->withToken('jeton-devine-'.$attempt)->postJson('/taches/recurrentes')->assertForbidden();
+        }
+
+        $this->withToken(self::TOKEN)->postJson('/taches/recurrentes')->assertTooManyRequests();
+    }
+
     public function test_a_wrong_or_missing_token_is_refused(): void
     {
         config(['pointage.tasks_token' => self::TOKEN]);

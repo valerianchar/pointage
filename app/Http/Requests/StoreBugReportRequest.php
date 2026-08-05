@@ -32,13 +32,14 @@ class StoreBugReportRequest extends FormRequest
     }
 
     /**
-     * Sujet retenu : celui saisi, sinon le début de la description.
+     * Sujet retenu : celui saisi, sinon le début de la description. Aplati sur
+     * une ligne dans les deux cas — il part dans un en-tête d'e-mail.
      */
     public function subject(): string
     {
-        $subject = $this->string('subject')->trim()->value();
+        $subject = $this->string('subject')->squish()->value();
 
-        return $subject !== '' ? $subject : Str::limit($this->description(), 40, '…');
+        return $subject !== '' ? $subject : Str::limit(Str::squish($this->description()), 40, '…');
     }
 
     public function description(): string

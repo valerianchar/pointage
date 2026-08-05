@@ -43,6 +43,11 @@ services:
           # Le conteneur applique les migrations à son démarrage.
           - key: MIGRATE_ON_BOOT
             value: 'true'
+          # Render termine le TLS sur son propre proxy : sans cette confiance,
+          # tous les visiteurs partageraient l'adresse IP du proxy et le blocage
+          # des tentatives de connexion deviendrait global.
+          - key: TRUSTED_PROXIES
+            value: '*'
 
           # À renseigner dans le tableau de bord.
           # APP_URL doit être l'adresse publique en https : elle décide du schéma

@@ -31,6 +31,25 @@ class RegistrationTest extends TestCase
         $this->assertDatabaseHas('users', ['email' => 'marie@exemple.fr', 'name' => 'Marie Olivier']);
     }
 
+    public function test_registration_attempts_are_rate_limited(): void
+    {
+        foreach (range(1, 5) as $attempt) {
+            // Une soumission invalide compte aussi : c'est la tentative qui est freinée.
+            $this->post('/inscription', ['email' => 'pas-un-email'])
+                ->assertSessionHasErrors();
+        }
+
+        $this->post('/inscription', [
+            'name' => 'Marie Olivier',
+            'email' => 'marie@exemple.fr',
+            'password' => 'mot-de-passe-solide',
+            'password_confirmation' => 'mot-de-passe-solide',
+        ])->assertTooManyRequests();
+
+        $this->assertGuest();
+        $this->assertDatabaseCount('users', 0);
+    }
+
     public function test_an_already_used_email_is_refused(): void
     {
         $existing = User::factory()->create();

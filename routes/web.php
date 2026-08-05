@@ -22,7 +22,9 @@ use Illuminate\Support\Facades\Route;
  * Déclencheur des tâches planifiées pour un hébergeur sans cron. Protégé par un
  * jeton, et inexistant tant qu'aucun jeton n'est configuré.
  */
-Route::post('/taches/recurrentes', ScheduledTaskController::class)->name('tasks.recurring');
+Route::post('/taches/recurrentes', ScheduledTaskController::class)
+    ->middleware('throttle:6,1')
+    ->name('tasks.recurring');
 
 Route::middleware('guest')->group(function () {
     Route::get('/connexion', [AuthenticatedSessionController::class, 'create'])->name('login');
@@ -30,7 +32,8 @@ Route::middleware('guest')->group(function () {
 
     Route::middleware('registration')->group(function () {
         Route::get('/inscription', [RegisteredUserController::class, 'create'])->name('register');
-        Route::post('/inscription', [RegisteredUserController::class, 'store']);
+        // Créer un profil est rare : freiner ici coupe la création de comptes en masse.
+        Route::post('/inscription', [RegisteredUserController::class, 'store'])->middleware('throttle:5,1');
     });
 });
 
@@ -73,7 +76,10 @@ Route::middleware('auth')->group(function () {
         Route::post('/tags', [TagController::class, 'store'])->name('tags.store');
         Route::delete('/tags/{tag}', [TagController::class, 'destroy'])->name('tags.destroy');
 
-        Route::post('/signalements', [BugReportController::class, 'store'])->name('bug-reports.store');
+        // Chaque signalement part en e-mail au mainteneur : le débit doit rester humain.
+        Route::post('/signalements', [BugReportController::class, 'store'])
+            ->middleware('throttle:5,1')
+            ->name('bug-reports.store');
 
         Route::patch('/confidentialite', [PrivacyController::class, 'update'])->name('privacy.update');
     });
