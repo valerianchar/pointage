@@ -25,7 +25,10 @@ class AccountResource extends JsonResource
             'balance_cents' => $this->balance_cents,
             // Opérations encore à rapprocher du relevé, tous mois confondus.
             'pending_count' => (int) ($this->getAttributes()['pending_count'] ?? 0),
+            'period_start_day' => $this->period_start_day,
+            'period_end_day' => $this->period_end_day,
             'url' => route('accounts.show', $this->id),
+            'period_url' => route('accounts.period', $this->id),
             // Résolue explicitement : une collection imbriquée non résolue se
             // sérialise enveloppée dans une clé « data » que le front n'attend pas.
             'tags' => $this->whenLoaded('tags', fn (): array => TagResource::collection($this->tags)->resolve()),

@@ -32,4 +32,17 @@ return [
 
     'tasks_token' => env('POINTAGE_TASKS_TOKEN'),
 
+    /*
+    |--------------------------------------------------------------------------
+    | E-mail du mainteneur
+    |--------------------------------------------------------------------------
+    |
+    | Adresse qui reçoit les signalements de bug envoyés depuis l'application.
+    | Laissée vide, les signalements sont tout de même conservés en base :
+    | seul l'e-mail n'est pas envoyé.
+    |
+    */
+
+    'maintainer_email' => env('POINTAGE_MAINTAINER_EMAIL'),
+
 ];

@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Actions\CreateAccount;
 use App\Enums\AccountType;
+use App\Enums\BugReportStatus;
 use App\Models\Account;
 use App\Models\Tag;
 use App\Models\User;
@@ -30,6 +31,15 @@ class DemoDataSeeder extends Seeder
         foreach ($this->accountDefinitions() as $definition) {
             $this->seedAccount($user, $definition);
         }
+
+        // Le signalement résolu de la maquette, daté de la fin du mois dernier.
+        $resolvedReport = $user->bugReports()->create([
+            'subject' => 'Le solde du PEA ne se met pas à jour',
+            'description' => 'Après un achat, le solde affiché sur l\'accueil reste l\'ancien.',
+            'status' => BugReportStatus::Resolved,
+        ]);
+        $resolvedReport->created_at = CarbonImmutable::now()->subMonthNoOverflow()->setDay(28);
+        $resolvedReport->save();
     }
 
     /**
@@ -51,6 +61,7 @@ class DemoDataSeeder extends Seeder
         }
 
         $account->credits()->createMany($definition['credits'] ?? []);
+        $account->closings()->createMany($definition['closings'] ?? []);
 
         /*
          * Le solde de la maquette est un solde courant : on en déduit le point de
@@ -58,6 +69,7 @@ class DemoDataSeeder extends Seeder
          */
         $account->update([
             'initial_balance_cents' => $definition['balance_cents'] - (int) $account->transactions()->sum('amount_cents'),
+            ...$definition['period'] ?? [],
         ]);
     }
 
@@ -119,6 +131,19 @@ class DemoDataSeeder extends Seeder
                         'payment_day' => 10,
                     ],
                 ],
+                'closings' => [
+                    [
+                        // Le mois précédent, clôturé avec un petit écart commenté — la
+                        // vitrine de l'historique du bilan, comme sur la maquette.
+                        'period_start' => $month->subMonthNoOverflow()->toDateString(),
+                        'period_end' => $month->subMonthNoOverflow()->endOfMonth()->toDateString(),
+                        'theoretical_balance_cents' => 210_000,
+                        'real_balance_cents' => 208_760,
+                        'pointed_expenses_cents' => 100_420,
+                        'pointed_incomes_cents' => 240_000,
+                        'note' => 'Oubli : péage A10 (~8 €) + café distributeur, non saisis.',
+                    ],
+                ],
                 'transactions' => [
                     ['label' => 'Salaire', 'amount_cents' => 240_000, 'tag' => 'Salaire', 'date' => $month, 'pointed' => true, 'recurring' => true],
                     ['label' => 'Loyer', 'amount_cents' => -82_000, 'tag' => 'Loyer', 'date' => $month->addDay(), 'pointed' => true, 'recurring' => true],
@@ -150,6 +175,8 @@ class DemoDataSeeder extends Seeder
                 'name' => 'PEA',
                 'type' => AccountType::StockPlan,
                 'balance_cents' => 1_248_030,
+                // Cycle à cheval sur deux mois, comme un relevé à débit différé.
+                'period' => ['period_start_day' => 5, 'period_end_day' => 4],
                 'transactions' => [
                     ['label' => 'Achat 4× Air Liquide', 'amount_cents' => -50_000, 'tag' => 'Achat action', 'date' => $month, 'pointed' => true],
                     ['label' => 'Dividende TotalEnergies', 'amount_cents' => 3_820, 'tag' => 'Dividende', 'date' => $month->addDay()],

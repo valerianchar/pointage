@@ -1,5 +1,6 @@
 <script setup>
 import { Link, router, usePage } from '@inertiajs/vue3';
+import { useBugReport } from '../composables/useBugReport';
 import { useNavigation } from '../composables/useNavigation';
 import { routes } from '../routes';
 import Amount from './Amount.vue';
@@ -8,6 +9,7 @@ import PrivacyToggle from './PrivacyToggle.vue';
 
 const page = usePage();
 const { items, accounts } = useNavigation();
+const { open: openBugReport } = useBugReport();
 
 function signOut() {
     router.post(routes.logout);
@@ -69,6 +71,15 @@ function signOut() {
             </span>
             <span class="min-w-0 flex-1 truncate text-[12px]">{{ page.props.auth.user.name }}</span>
             <PrivacyToggle class="text-[17px]" />
+            <button
+                type="button"
+                class="cursor-pointer text-[17px] text-ink-muted transition-colors hover:text-accent-soft"
+                title="Signaler un bug"
+                aria-label="Signaler un bug"
+                @click="openBugReport"
+            >
+                <PhIcon name="ph-bug" />
+            </button>
             <button
                 type="button"
                 class="cursor-pointer text-[17px] text-ink-muted transition-colors hover:text-accent-soft"

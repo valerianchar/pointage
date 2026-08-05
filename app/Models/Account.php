@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use App\Enums\AccountType;
+use App\Support\PointingPeriod;
+use Carbon\CarbonInterface;
 use Database\Factories\AccountFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -11,7 +13,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['name', 'type', 'initial_balance_cents'])]
+#[Fillable(['name', 'type', 'initial_balance_cents', 'period_start_day', 'period_end_day'])]
 class Account extends Model
 {
     /** @use HasFactory<AccountFactory> */
@@ -25,6 +27,8 @@ class Account extends Model
         return [
             'type' => AccountType::class,
             'initial_balance_cents' => 'integer',
+            'period_start_day' => 'integer',
+            'period_end_day' => 'integer',
         ];
     }
 
@@ -56,6 +60,20 @@ class Account extends Model
     public function credits(): HasMany
     {
         return $this->hasMany(Credit::class);
+    }
+
+    /** @return HasMany<AccountClosing, $this> */
+    public function closings(): HasMany
+    {
+        return $this->hasMany(AccountClosing::class);
+    }
+
+    /**
+     * Fenêtre de pointage qui contient la date donnée, selon les jours du compte.
+     */
+    public function pointingPeriod(CarbonInterface $date): PointingPeriod
+    {
+        return PointingPeriod::containing($date, $this->period_start_day, $this->period_end_day);
     }
 
     /**

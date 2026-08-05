@@ -10,6 +10,7 @@ import PrivacyToggle from '../components/PrivacyToggle.vue';
 import Sparkline from '../components/Sparkline.vue';
 import TagSpendingBars from '../components/TagSpendingBars.vue';
 import WidgetCard from '../components/WidgetCard.vue';
+import { useBugReport } from '../composables/useBugReport';
 import { useMoney } from '../composables/useMoney';
 import { shareOf } from '../money';
 import { routes } from '../routes';
@@ -89,6 +90,8 @@ function toggleWidget(key) {
 function lockApplication() {
     router.post(routes.lock);
 }
+
+const { open: openBugReport } = useBugReport();
 </script>
 
 <template>
@@ -106,6 +109,15 @@ function lockApplication() {
 
             <div class="mb-1.5 flex items-center gap-3 text-[18px] lg:hidden">
                 <PrivacyToggle />
+                <button
+                    type="button"
+                    class="cursor-pointer text-ink-muted transition-colors hover:text-accent-soft"
+                    title="Signaler un bug"
+                    aria-label="Signaler un bug"
+                    @click="openBugReport"
+                >
+                    <PhIcon name="ph-bug" />
+                </button>
                 <button
                     type="button"
                     class="cursor-pointer text-ink-muted transition-colors hover:text-accent-soft"

@@ -40,15 +40,20 @@
 
 .ph-arrows-clockwise::before { content: '\e094'; }
 .ph-bank::before { content: '\e0b4'; }
+.ph-bug::before { content: '\e5f4'; }
+.ph-calendar-check::before { content: '\e712'; }
 .ph-caret-left::before { content: '\e138'; }
 .ph-chart-line-up::before { content: '\e156'; }
 .ph-check::before { content: '\e182'; }
+.ph-check-circle::before { content: '\e184'; }
 .ph-currency-btc::before { content: '\e618'; }
 .ph-eye::before { content: '\e220'; }
 .ph-eye-slash::before { content: '\e224'; }
 .ph-hand-coins::before { content: '\ea8c'; }
 .ph-house::before { content: '\e2c2'; }
 .ph-lock::before { content: '\e2fa'; }
+.ph-note::before { content: '\e348'; }
+.ph-paper-plane-tilt::before { content: '\e398'; }
 .ph-piggy-bank::before { content: '\ea04'; }
 .ph-plus::before { content: '\e3d4'; }
 .ph-plus-circle::before { content: '\e3d6'; }

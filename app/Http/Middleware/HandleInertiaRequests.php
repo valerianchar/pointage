@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Http\Resources\AccountResource;
+use App\Http\Resources\BugReportResource;
 use App\Queries\UserAccounts;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -45,6 +46,13 @@ class HandleInertiaRequests extends Middleware
             'accounts' => $user === null
                 ? []
                 : AccountResource::collection($this->userAccounts->forSidebar($user))->resolve(),
+            /*
+             * La modale « Signaler un bug » s'ouvre depuis n'importe quel écran :
+             * ses signalements sont donc partagés, comme les comptes.
+             */
+            'bug_reports' => $user === null
+                ? []
+                : BugReportResource::collection($user->bugReports()->latest('id')->get())->resolve(),
             'flash' => [
                 'success' => fn (): ?string => $request->session()->get('success'),
                 'error' => fn (): ?string => $request->session()->get('error'),

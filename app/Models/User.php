@@ -54,6 +54,12 @@ class User extends Authenticatable
         return $this->hasMany(Account::class);
     }
 
+    /** @return HasMany<BugReport, $this> */
+    public function bugReports(): HasMany
+    {
+        return $this->hasMany(BugReport::class);
+    }
+
     /**
      * Initiales affichées dans le pied de la sidebar (« MO » sur la maquette).
      */

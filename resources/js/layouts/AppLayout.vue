@@ -1,6 +1,7 @@
 <script setup>
 import AppSidebar from '../components/AppSidebar.vue';
 import AppTabBar from '../components/AppTabBar.vue';
+import BugReportDialog from '../components/BugReportDialog.vue';
 import FlashToast from '../components/FlashToast.vue';
 </script>
 
@@ -18,5 +19,6 @@ import FlashToast from '../components/FlashToast.vue';
     </div>
 
     <AppTabBar />
+    <BugReportDialog />
     <FlashToast />
 </template>
