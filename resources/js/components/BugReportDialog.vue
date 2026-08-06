@@ -44,7 +44,7 @@ function statusClasses(report) {
             <DialogOverlay class="fixed inset-0 z-80 bg-[rgba(10,11,20,0.6)]" />
             <!-- Mobile : feuille collée en bas de l'écran ; desktop : carte centrée. -->
             <DialogContent
-                class="fixed inset-x-0 bottom-0 z-90 max-h-[78%] overflow-y-auto rounded-t-2xl border-t border-hairline bg-chrome p-4 pb-8 outline-none lg:inset-x-auto lg:top-1/2 lg:left-1/2 lg:bottom-auto lg:w-[460px] lg:max-h-[82vh] lg:-translate-x-1/2 lg:-translate-y-1/2 lg:rounded-card lg:border lg:p-5 lg:shadow-[0_24px_60px_rgba(0,0,0,0.5)]"
+                class="fixed inset-x-0 bottom-0 z-90 max-h-[78%] overflow-y-auto rounded-t-2xl border-t border-hairline bg-chrome p-4 pb-[max(2rem,env(safe-area-inset-bottom))] outline-none lg:inset-x-auto lg:top-1/2 lg:left-1/2 lg:bottom-auto lg:w-[460px] lg:max-h-[82vh] lg:-translate-x-1/2 lg:-translate-y-1/2 lg:rounded-card lg:border lg:p-5 lg:shadow-[0_24px_60px_rgba(0,0,0,0.5)]"
             >
                 <div class="flex items-center gap-2 lg:gap-2.5">
                     <PhIcon name="ph-bug" class="text-[18px] text-accent lg:text-[19px]" />

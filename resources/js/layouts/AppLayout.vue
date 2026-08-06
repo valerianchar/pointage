@@ -15,7 +15,11 @@ import PointingDueBanner from '../components/PointingDueBanner.vue';
             Mobile : contenu pleine largeur, dégagé sous la tab bar fixe.
             Desktop : sidebar figée à gauche, contenu à 36/44 px de marge.
         -->
-        <main class="min-w-0 flex-1 px-4 pt-4 pb-32 lg:px-11 lg:pt-9 lg:pb-15">
+        <!-- L'app installée passe sous la barre de statut du téléphone
+             (viewport-fit=cover) : le haut du contenu s'en écarte. -->
+        <main
+            class="min-w-0 flex-1 px-4 pt-[calc(env(safe-area-inset-top)+1rem)] pb-32 lg:px-11 lg:pt-9 lg:pb-15"
+        >
             <PointingDueBanner />
             <slot />
         </main>
