@@ -3,11 +3,13 @@
 namespace Tests\Feature;
 
 use App\Enums\AccountType;
+use App\Enums\AssetProvider;
 use App\Models\Account;
 use App\Models\Tag;
 use App\Models\Transaction;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Http;
 use Inertia\Testing\AssertableInertia;
 use Tests\TestCase;
 
@@ -129,6 +131,77 @@ class AccountTest extends TestCase
         $this->actingAs($user)
             ->post('/comptes', ['name' => 'Compte', 'type' => 'coffre-fort'])
             ->assertSessionHasErrors('type');
+
+        $this->assertSame(0, $user->accounts()->count());
+    }
+
+    public function test_a_crypto_account_is_born_at_the_value_of_its_positions(): void
+    {
+        Http::fake(['api.coingecko.com/*' => Http::response([
+            'bitcoin' => ['eur' => 100_000],
+            'ethereum' => ['eur' => 3_000],
+        ])]);
+
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->post('/comptes', [
+                'name' => 'Portefeuille crypto',
+                'type' => AccountType::Crypto->value,
+                'positions' => [
+                    ['asset_id' => 'Bitcoin', 'quantity' => '0,05'],
+                    ['asset_id' => 'ethereum', 'quantity' => '2'],
+                ],
+            ])
+            ->assertRedirect();
+
+        $account = $user->accounts()->sole();
+
+        // 0,05 × 100 000 € + 2 × 3 000 € = 11 000 € — et l'identifiant retombe en minuscules.
+        $this->assertSame(1_100_000, $account->initial_balance_cents);
+        $this->assertSame(['bitcoin', 'ethereum'], $account->positions()->orderBy('id')->pluck('asset_id')->all());
+        $this->assertSame(AssetProvider::Coingecko, $account->positions()->first()->provider);
+    }
+
+    public function test_a_pea_account_declares_its_etfs_the_same_way(): void
+    {
+        Http::fake(['query1.finance.yahoo.com/*' => Http::response(['chart' => ['result' => [['meta' => [
+            'currency' => 'EUR',
+            'regularMarketPrice' => 550.25,
+        ]]]]])]);
+
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->post('/comptes', [
+                'name' => 'PEA Fortuneo',
+                'type' => AccountType::StockPlan->value,
+                'positions' => [['asset_id' => 'cw8.pa', 'quantity' => '12']],
+            ])
+            ->assertRedirect();
+
+        $account = $user->accounts()->sole();
+        $position = $account->positions()->sole();
+
+        $this->assertSame(660_300, $account->initial_balance_cents);
+        $this->assertSame('CW8.PA', $position->asset_id);
+        $this->assertSame(AssetProvider::Yahoo, $position->provider);
+    }
+
+    public function test_an_unknown_asset_blocks_the_account_creation(): void
+    {
+        // Réponse vide : CoinGecko ne connaît pas cet identifiant.
+        Http::fake(['api.coingecko.com/*' => Http::response([])]);
+
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->post('/comptes', [
+                'name' => 'Portefeuille crypto',
+                'type' => AccountType::Crypto->value,
+                'positions' => [['asset_id' => 'pieceinventee', 'quantity' => '1']],
+            ])
+            ->assertSessionHasErrors('positions');
 
         $this->assertSame(0, $user->accounts()->count());
     }

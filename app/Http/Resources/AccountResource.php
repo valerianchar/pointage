@@ -23,6 +23,11 @@ class AccountResource extends JsonResource
             'type' => $this->type->value,
             'type_label' => $this->type->label(),
             'icon' => $this->type->icon(),
+            // Comptes à positions (crypto, PEA) : la fiche propose la saisie
+            // d'avoirs, avec l'aide et la source de cours propres au type.
+            'has_positions' => $this->type->hasPositions(),
+            'position_placeholder' => $this->type->positionPlaceholder(),
+            'price_source' => $this->type->assetProvider()?->label(),
             'balance_cents' => $this->balance_cents,
             // Opérations encore à rapprocher du relevé, tous mois confondus.
             'pending_count' => (int) ($this->getAttributes()['pending_count'] ?? 0),

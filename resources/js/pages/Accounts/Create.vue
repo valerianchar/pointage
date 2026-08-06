@@ -2,13 +2,14 @@
 import { computed } from 'vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import AccountTypePicker from '../../components/AccountTypePicker.vue';
+import AssetSearchField from '../../components/AssetSearchField.vue';
 import FormField from '../../components/FormField.vue';
 import PhIcon from '../../components/PhIcon.vue';
 import TagPill from '../../components/TagPill.vue';
 import { routes } from '../../routes';
 
 const props = defineProps({
-    /** @type {{value: string, label: string, icon: string, default_tags: string[]}[]} */
+    /** @type {{value: string, label: string, icon: string, default_tags: string[], has_positions: boolean, position_placeholder: string|null, price_source: string|null}[]} */
     types: { type: Array, required: true },
 });
 
@@ -16,14 +17,51 @@ const form = useForm({
     name: '',
     initial_balance: '',
     type: props.types[0].value,
+    /* Comptes à positions (crypto, PEA) : les avoirs remplacent le solde. */
+    positions: [{ asset_id: '', quantity: '' }],
 });
 
-const selectedTypeTags = computed(
-    () => props.types.find((type) => type.value === form.type)?.default_tags ?? [],
-);
+const selectedType = computed(() => props.types.find((type) => type.value === form.type) ?? props.types[0]);
+const selectedTypeTags = computed(() => selectedType.value.default_tags);
+
+/* Les erreurs d'une ligne arrivent sous « positions.2.asset_id » : chacune s'affiche sous la sienne. */
+function errorsOfRow(index) {
+    return Object.entries(form.errors)
+        .filter(([key]) => key.startsWith(`positions.${index}.`))
+        .map(([, message]) => message);
+}
+
+function addPositionRow() {
+    form.positions.push({ asset_id: '', quantity: '' });
+}
+
+function removePositionRow(index) {
+    form.positions.splice(index, 1);
+}
 
 function submit() {
-    form.post(routes.accountStore);
+    /*
+     * Les lignes vides sont retirées du formulaire même, pas seulement de
+     * l'envoi : les erreurs « positions.0… » retombent ainsi sous la bonne
+     * ligne à l'écran.
+     */
+    if (selectedType.value.has_positions) {
+        form.positions = form.positions.filter(
+            (position) => position.asset_id.trim() !== '' || position.quantity !== '',
+        );
+    }
+
+    form.transform((data) => ({
+        ...data,
+        /* Seuls les comptes à positions en envoient. */
+        positions: selectedType.value.has_positions ? data.positions : [],
+    })).post(routes.accountStore, {
+        onError: () => {
+            if (selectedType.value.has_positions && form.positions.length === 0) {
+                addPositionRow();
+            }
+        },
+    });
 }
 </script>
 
@@ -44,7 +82,7 @@ function submit() {
                     <input v-model="form.name" type="text" class="field" placeholder="Ex. PEA Fortuneo" />
                 </FormField>
 
-                <FormField label="Solde actuel" :error="form.errors.initial_balance">
+                <FormField v-if="!selectedType.has_positions" label="Solde actuel" :error="form.errors.initial_balance">
                     <input
                         v-model="form.initial_balance"
                         type="text"
@@ -58,6 +96,60 @@ function submit() {
             <p class="label-caps mt-3.5 mb-1.5 lg:mt-4">Type de compte</p>
             <AccountTypePicker v-model="form.type" :types="props.types" />
             <p v-if="form.errors.type" class="mt-1.5 text-[13px] text-accent-soft">{{ form.errors.type }}</p>
+
+            <!-- Comptes à positions : on déclare ses avoirs, pas un solde — il
+                 naît de la valeur du portefeuille au cours du jour. -->
+            <template v-if="selectedType.has_positions">
+                <p class="label-caps mt-3.5 mb-1.5 lg:mt-4">Positions</p>
+                <div class="flex flex-col gap-1.5 lg:gap-2">
+                    <div v-for="(position, index) in form.positions" :key="index">
+                        <div class="flex gap-1.5 lg:gap-2">
+                            <AssetSearchField
+                                v-model="position.asset_id"
+                                :account-type="form.type"
+                                class="flex-1"
+                                :placeholder="selectedType.position_placeholder"
+                                :aria-label="`Actif de la position ${index + 1}`"
+                            />
+                            <input
+                                v-model="position.quantity"
+                                type="text"
+                                inputmode="decimal"
+                                class="field w-[110px] shrink-0"
+                                placeholder="Quantité"
+                                :aria-label="`Quantité de la position ${index + 1}`"
+                            />
+                            <button
+                                v-if="form.positions.length > 1"
+                                type="button"
+                                class="shrink-0 cursor-pointer px-1 text-[14px] text-ink-muted transition-colors hover:text-accent-soft"
+                                :aria-label="`Retirer la position ${index + 1}`"
+                                @click="removePositionRow(index)"
+                            >
+                                <PhIcon name="ph-x" />
+                            </button>
+                        </div>
+                        <!-- Chaque ligne porte ses propres manques, sous elle. -->
+                        <p v-for="message in errorsOfRow(index)" :key="message" class="mt-1 text-[13px] text-accent-soft">
+                            {{ message }}
+                        </p>
+                    </div>
+                </div>
+                <button
+                    type="button"
+                    class="mt-2 cursor-pointer text-[13px] text-accent-soft transition-colors hover:text-ink lg:text-[12px]"
+                    @click="addPositionRow"
+                >
+                    + Ajouter une position
+                </button>
+                <p v-if="form.errors.positions" class="mt-1.5 text-[13px] text-accent-soft">
+                    {{ form.errors.positions }}
+                </p>
+                <p class="mt-1.5 text-[11px] text-ink-faint lg:text-[10px]">
+                    Le solde du compte naîtra de la valeur de ces positions, cours
+                    {{ selectedType.price_source }} du jour, puis suivra le marché chaque nuit.
+                </p>
+            </template>
 
             <p class="mt-3 mb-1.5 text-[12px] text-ink-muted lg:mt-3.5 lg:text-[11px]">
                 Tags créés par défaut pour ce type :

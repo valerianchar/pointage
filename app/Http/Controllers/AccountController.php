@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Actions\CreateAccount;
 use App\Actions\DeleteAccount;
+use App\Actions\EnsureAssetPrices;
 use App\Enums\AccountType;
 use App\Http\Requests\StoreAccountRequest;
 use App\Http\Resources\AccountResource;
@@ -56,18 +57,54 @@ class AccountController extends Controller
         ]);
     }
 
-    public function store(StoreAccountRequest $request, CreateAccount $createAccount): RedirectResponse
+    public function store(StoreAccountRequest $request, CreateAccount $createAccount, EnsureAssetPrices $ensureAssetPrices): RedirectResponse
     {
+        $type = $request->accountType();
+        $positions = $request->positions();
+
+        /*
+         * Un compte à positions naît à la valeur de son portefeuille : les
+         * cours sont récupérés sur-le-champ — ce qui valide chaque actif — et
+         * le solde initial en découle. Pas de positions ? Solde saisi, comme
+         * pour n'importe quel compte.
+         */
+        $initialBalanceCents = $positions === []
+            ? $request->initialBalanceCents()
+            : $this->portfolioValueCents($ensureAssetPrices, $type, $positions);
+
         $account = $createAccount->handle(
             $request->user(),
             $request->string('name')->trim()->value(),
-            $request->accountType(),
-            $request->initialBalanceCents(),
+            $type,
+            $initialBalanceCents,
+            $positions,
         );
 
         return redirect()
             ->route('accounts.show', $account)
-            ->with('success', 'Compte créé, avec ses tags par défaut.');
+            ->with('success', $positions === []
+                ? 'Compte créé, avec ses tags par défaut.'
+                : 'Compte créé — son solde suivra les cours chaque nuit.');
+    }
+
+    /**
+     * Valeur du portefeuille déclaré, au cours du jour, en centimes.
+     *
+     * @param  list<array{asset_id: string, quantity: string}>  $positions
+     */
+    private function portfolioValueCents(EnsureAssetPrices $ensureAssetPrices, AccountType $type, array $positions): int
+    {
+        $prices = $ensureAssetPrices->handle(
+            $type->assetProvider(),
+            array_column($positions, 'asset_id'),
+            'positions',
+        );
+
+        return (int) collect($positions)->sum(
+            fn (array $position): float => round(
+                (float) $position['quantity'] * (float) $prices[$position['asset_id']]->price_eur * 100
+            )
+        );
     }
 
     public function destroy(Account $account, DeleteAccount $deleteAccount): RedirectResponse
@@ -97,10 +134,10 @@ class AccountController extends Controller
         $prices = AssetPrice::query()
             ->whereIn('asset_id', $positions->pluck('asset_id'))
             ->get()
-            ->keyBy('asset_id');
+            ->keyBy(fn (AssetPrice $price): string => $price->provider->value.':'.$price->asset_id);
 
         return $positions->map(function (Position $position) use ($prices): array {
-            $price = $prices->get($position->asset_id);
+            $price = $prices->get($position->provider->value.':'.$position->asset_id);
 
             return [
                 'id' => $position->id,

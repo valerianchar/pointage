@@ -3,6 +3,7 @@ import { computed, ref } from 'vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { DialogContent, DialogDescription, DialogOverlay, DialogPortal, DialogRoot, DialogTitle } from 'reka-ui';
 import Amount from '../../components/Amount.vue';
+import AssetSearchField from '../../components/AssetSearchField.vue';
 import CreditSummaryCard from '../../components/CreditSummaryCard.vue';
 import Gauge from '../../components/Gauge.vue';
 import PhIcon from '../../components/PhIcon.vue';
@@ -23,8 +24,8 @@ const props = defineProps({
     add_url: { type: String, required: true },
 });
 
-/* Positions crypto : le compte suit la valeur du portefeuille, cours CoinGecko. */
-const showPositions = computed(() => props.account.type === 'crypto' || props.positions.length > 0);
+/* Comptes à positions — crypto, PEA : le compte suit la valeur du portefeuille. */
+const showPositions = computed(() => props.account.has_positions || props.positions.length > 0);
 const addingPosition = ref(false);
 const positionForm = useForm({ asset_id: '', quantity: '' });
 
@@ -175,8 +176,7 @@ const pointingLabel = computed(() =>
             </div>
 
             <p v-else class="mt-1.5 text-[13px] text-ink-muted lg:text-[12px]">
-                Déclarez vos avoirs (« bitcoin », « ethereum »…) : le compte suivra leur valeur chaque nuit,
-                sans rien à pointer.
+                Déclarez vos avoirs : le compte suivra leur valeur chaque nuit, sans rien à pointer.
             </p>
 
             <button
@@ -189,25 +189,13 @@ const pointingLabel = computed(() =>
             </button>
             <form v-else class="mt-2 rounded-card bg-surface p-3" @submit.prevent="submitPosition">
                 <div class="flex gap-1.5 lg:gap-2">
-                    <input
+                    <AssetSearchField
                         v-model="positionForm.asset_id"
-                        type="text"
-                        class="field min-w-0 flex-1 bg-page!"
-                        placeholder="Identifiant CoinGecko — ex. bitcoin"
-                        list="assets-connus"
-                        aria-label="Identifiant CoinGecko"
+                        :account-type="props.account.type"
+                        class="flex-1"
+                        input-class="bg-page!"
+                        :placeholder="props.account.position_placeholder"
                     />
-                    <datalist id="assets-connus">
-                        <option value="bitcoin" />
-                        <option value="ethereum" />
-                        <option value="solana" />
-                        <option value="ripple" />
-                        <option value="cardano" />
-                        <option value="dogecoin" />
-                        <option value="polkadot" />
-                        <option value="chainlink" />
-                        <option value="litecoin" />
-                    </datalist>
                     <input
                         v-model="positionForm.quantity"
                         type="text"
@@ -232,8 +220,8 @@ const pointingLabel = computed(() =>
                 </p>
             </form>
             <p class="mt-1.5 text-[11px] text-ink-faint lg:text-[10px]">
-                Cours fournis par CoinGecko, rafraîchis chaque nuit à 5 h 30 — le solde du compte est recalé
-                sur la valeur totale des positions.
+                Cours fournis par {{ props.account.price_source }}, rafraîchis chaque nuit à 5 h 30 — le solde
+                du compte est recalé sur la valeur totale des positions.
             </p>
         </template>
 
