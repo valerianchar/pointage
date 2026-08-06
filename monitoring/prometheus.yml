@@ -23,3 +23,10 @@ scrape_configs:
     - job_name: traefik
       static_configs:
           - targets: ['traefik:8082']
+
+    # Le temps réel : connexions websocket, messages, mémoire de Soketi.
+    # Joint par le réseau « proxy », partagé avec la pile applicative —
+    # même chemin que pour Traefik, aucun réseau supplémentaire.
+    - job_name: soketi
+      static_configs:
+          - targets: ['soketi:9601']

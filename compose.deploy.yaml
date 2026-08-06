@@ -99,6 +99,10 @@ services:
             SOKETI_DEFAULT_APP_ID: '${PUSHER_APP_ID}'
             SOKETI_DEFAULT_APP_KEY: '${PUSHER_APP_KEY}'
             SOKETI_DEFAULT_APP_SECRET: '${PUSHER_APP_SECRET}'
+            # Métriques Prometheus sur le port 9601 — jamais publié ni routé par
+            # Traefik : seul le Prometheus du monitoring vient les lire, par le
+            # réseau « proxy » qu'ils partagent déjà.
+            SOKETI_METRICS_ENABLED: '1'
         labels:
             traefik.enable: 'true'
             traefik.http.routers.soketi.rule: 'Host(`${APP_DOMAIN}`) && PathPrefix(`/app/`)'
