@@ -32,9 +32,10 @@ const form = useForm({
 const selectedAccount = computed(() => props.accounts.find((account) => account.id === form.account_id) ?? null);
 const availableTags = computed(() => selectedAccount.value?.tags ?? []);
 
-const submitLabel = computed(
-    () => props.directions.find((direction) => direction.value === form.direction)?.submit_label ?? 'Ajouter',
+const selectedDirection = computed(
+    () => props.directions.find((direction) => direction.value === form.direction) ?? props.directions[0],
 );
+const submitLabel = computed(() => selectedDirection.value.submit_label ?? 'Ajouter');
 
 // Changer de compte recharge ses tags : celui qui était retenu n'existe plus ici.
 watch(availableTags, (tags) => {
@@ -130,7 +131,8 @@ function submit() {
             <!-- Le jour n'a de sens que pour une récurrente : il apparaît avec elle. -->
             <div v-if="form.is_recurring" class="mt-3 flex items-center justify-between lg:mt-3.5">
                 <div>
-                    <p class="text-[15px]">Prélevée le</p>
+                    <!-- « Prélevée le » pour une dépense, « Ajoutée le » pour une entrée. -->
+                    <p class="text-[15px]">{{ selectedDirection.recurring_day_label }}</p>
                     <p class="text-[12px] text-ink-muted lg:text-[11px]">
                         L'opération se crée ce jour-là, chaque mois
                     </p>

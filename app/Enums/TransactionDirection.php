@@ -24,6 +24,17 @@ enum TransactionDirection: string
     }
 
     /**
+     * Libellé du jour de récurrence : une dépense est prélevée, un ajout est… ajouté.
+     */
+    public function recurringDayLabel(): string
+    {
+        return match ($this) {
+            self::Expense => 'Prélevée le',
+            self::Income => 'Ajoutée le',
+        };
+    }
+
+    /**
      * Applique le signe du sens à un montant saisi en valeur absolue.
      */
     public function signedCents(int $cents): int
@@ -35,13 +46,14 @@ enum TransactionDirection: string
     }
 
     /**
-     * @return list<array{value: string, label: string, submit_label: string}>
+     * @return list<array{value: string, label: string, submit_label: string, recurring_day_label: string}>
      */
     public static function options(): array
     {
         return array_map(fn (self $direction): array => [
             'value' => $direction->value,
             'label' => $direction->label(),
+            'recurring_day_label' => $direction->recurringDayLabel(),
             'submit_label' => $direction->submitLabel(),
         ], self::cases());
     }
