@@ -20,7 +20,7 @@ name: pointage
 
 services:
     app:
-        image: '${POINTAGE_IMAGE:-ghcr.io/valerianchar/pointage:latest}'
+        image: '${POINTAGE_IMAGE:-localhost:5000/pointage:latest}'
         restart: unless-stopped
         env_file: .env
         environment:
@@ -43,7 +43,7 @@ services:
                 condition: service_healthy
 
     scheduler:
-        image: '${POINTAGE_IMAGE:-ghcr.io/valerianchar/pointage:latest}'
+        image: '${POINTAGE_IMAGE:-localhost:5000/pointage:latest}'
         restart: unless-stopped
         env_file: .env
         entrypoint: ['php', 'artisan', 'schedule:work']
