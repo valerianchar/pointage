@@ -2,7 +2,8 @@
 
 namespace Tests\Feature;
 
-use App\Actions\SyncCryptoValuations;
+use App\Actions\SyncPositionValuations;
+use App\Enums\AccountType;
 use App\Models\Account;
 use App\Models\AssetPrice;
 use App\Models\Position;
@@ -27,7 +28,7 @@ class CryptoSyncTest extends TestCase
         Position::factory()->for($account)->of('bitcoin', '0.05')->create();
         Position::factory()->for($account)->of('ethereum', '2')->create();
 
-        $revalued = app(SyncCryptoValuations::class)->handle(CarbonImmutable::now());
+        $revalued = app(SyncPositionValuations::class)->handle(CarbonImmutable::now());
 
         // 0,05 × 100 000 € + 2 × 3 000,50 € = 11 001 €.
         $this->assertSame(1, $revalued);
@@ -45,7 +46,7 @@ class CryptoSyncTest extends TestCase
         $account = Account::factory()->startingAt(0)->create();
         Position::factory()->for($account)->of('bitcoin', '0.05')->create();
 
-        $sync = app(SyncCryptoValuations::class);
+        $sync = app(SyncPositionValuations::class);
         $this->assertSame(1, $sync->handle(CarbonImmutable::now()));
         $this->assertSame(0, $sync->handle(CarbonImmutable::now()));
         $this->assertSame(1, $account->transactions()->count());
@@ -58,7 +59,7 @@ class CryptoSyncTest extends TestCase
         $account = Account::factory()->startingAt(500_000)->create();
         Position::factory()->for($account)->of('bitcoin', '0.05')->create();
 
-        $this->assertSame(0, app(SyncCryptoValuations::class)->handle(CarbonImmutable::now()));
+        $this->assertSame(0, app(SyncPositionValuations::class)->handle(CarbonImmutable::now()));
         $this->assertSame(0, $account->transactions()->count());
         $this->assertSame(500_000, $account->fresh()->balance_cents);
     }
@@ -72,7 +73,7 @@ class CryptoSyncTest extends TestCase
         $account = Account::factory()->startingAt(0)->create();
         Position::factory()->for($account)->of('bitcoin', '0.1')->create();
 
-        $this->assertSame(1, app(SyncCryptoValuations::class)->handle(CarbonImmutable::now()));
+        $this->assertSame(1, app(SyncPositionValuations::class)->handle(CarbonImmutable::now()));
         $this->assertSame(900_000, $account->fresh()->balance_cents);
     }
 
@@ -80,7 +81,7 @@ class CryptoSyncTest extends TestCase
     {
         Http::fake(['api.coingecko.com/*' => Http::response(['bitcoin' => ['eur' => 100_000]])]);
 
-        $account = Account::factory()->create();
+        $account = Account::factory()->ofType(AccountType::Crypto)->create();
 
         $this->actingAs($account->user)
             ->post("/compte/{$account->id}/positions", ['asset_id' => 'bitcoin', 'quantity' => '0.05'])
@@ -99,7 +100,7 @@ class CryptoSyncTest extends TestCase
     public function test_someone_else_cannot_manage_positions(): void
     {
         Http::fake();
-        $account = Account::factory()->create();
+        $account = Account::factory()->ofType(AccountType::Crypto)->create();
         $position = Position::factory()->for($account)->create();
 
         $this->actingAs(User::factory()->create())

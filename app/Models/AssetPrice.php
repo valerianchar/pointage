@@ -2,10 +2,11 @@
 
 namespace App\Models;
 
+use App\Enums\AssetProvider;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 
-#[Fillable(['asset_id', 'price_eur', 'fetched_at'])]
+#[Fillable(['provider', 'asset_id', 'price_eur', 'fetched_at'])]
 class AssetPrice extends Model
 {
     /**
@@ -14,6 +15,7 @@ class AssetPrice extends Model
     protected function casts(): array
     {
         return [
+            'provider' => AssetProvider::class,
             'price_eur' => 'decimal:10',
             'fetched_at' => 'datetime',
         ];

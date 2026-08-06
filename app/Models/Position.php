@@ -2,13 +2,14 @@
 
 namespace App\Models;
 
+use App\Enums\AssetProvider;
 use Database\Factories\PositionFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['asset_id', 'label', 'quantity'])]
+#[Fillable(['provider', 'asset_id', 'label', 'quantity'])]
 class Position extends Model
 {
     /** @use HasFactory<PositionFactory> */
@@ -20,6 +21,7 @@ class Position extends Model
     protected function casts(): array
     {
         return [
+            'provider' => AssetProvider::class,
             'quantity' => 'decimal:10',
         ];
     }

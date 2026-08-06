@@ -39,6 +39,37 @@ enum AccountType: string
     }
 
     /**
+     * Fournisseur de cours des comptes à positions : un compte crypto ou PEA ne
+     * saisit pas de solde, il déclare ses avoirs et suit leur valeur de marché.
+     */
+    public function assetProvider(): ?AssetProvider
+    {
+        return match ($this) {
+            self::Crypto => AssetProvider::Coingecko,
+            self::StockPlan => AssetProvider::Yahoo,
+            default => null,
+        };
+    }
+
+    public function hasPositions(): bool
+    {
+        return $this->assetProvider() !== null;
+    }
+
+    /**
+     * Aide à la saisie d'une position : le champ cherche par nom, mais accepte
+     * aussi l'identifiant exact du fournisseur.
+     */
+    public function positionPlaceholder(): ?string
+    {
+        return match ($this) {
+            self::Crypto => 'Nom ou identifiant — ex. bitcoin',
+            self::StockPlan => 'Nom du fonds ou ticker — ex. Amundi MSCI World',
+            default => null,
+        };
+    }
+
+    /**
      * Tags créés automatiquement à la déclaration d'un compte de ce type.
      *
      * @return list<string>
@@ -58,7 +89,7 @@ enum AccountType: string
     /**
      * Description sérialisable de tous les types, pour l'écran « Déclarer un compte ».
      *
-     * @return list<array{value: string, label: string, icon: string, default_tags: list<string>}>
+     * @return list<array{value: string, label: string, icon: string, default_tags: list<string>, has_positions: bool, position_placeholder: string|null, price_source: string|null}>
      */
     public static function options(): array
     {
@@ -67,6 +98,9 @@ enum AccountType: string
             'label' => $type->label(),
             'icon' => $type->icon(),
             'default_tags' => $type->defaultTags(),
+            'has_positions' => $type->hasPositions(),
+            'position_placeholder' => $type->positionPlaceholder(),
+            'price_source' => $type->assetProvider()?->label(),
         ], self::cases());
     }
 }

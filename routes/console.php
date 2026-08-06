@@ -2,7 +2,7 @@
 
 use App\Console\Commands\GenerateRecurringTransactionsCommand;
 use App\Console\Commands\SendPointingRemindersCommand;
-use App\Console\Commands\SyncCryptoValuationsCommand;
+use App\Console\Commands\SyncPositionValuationsCommand;
 use Illuminate\Support\Facades\Schedule;
 
 /*
@@ -23,10 +23,10 @@ Schedule::command(SendPointingRemindersCommand::class)
     ->withoutOverlapping();
 
 /*
- * Les comptes à positions crypto se recalent au cours du jour avant que la
- * journée ne commence. En cas de panne de l'API, les cours de la veille
- * restent en place et le passage suivant rattrape.
+ * Les comptes à positions — crypto et PEA — se recalent au cours du jour avant
+ * que la journée ne commence. En cas de panne d'une API, les cours de la
+ * veille restent en place et le passage suivant rattrape.
  */
-Schedule::command(SyncCryptoValuationsCommand::class)
+Schedule::command(SyncPositionValuationsCommand::class)
     ->dailyAt('05:30')
     ->withoutOverlapping();

@@ -2,6 +2,7 @@
 
 namespace App\Actions;
 
+use App\Enums\AssetProvider;
 use App\Models\AssetPrice;
 use Illuminate\Support\Facades\Http;
 
@@ -50,7 +51,7 @@ final class FetchCryptoPrices
             }
 
             AssetPrice::updateOrCreate(
-                ['asset_id' => $assetId],
+                ['provider' => AssetProvider::Coingecko, 'asset_id' => $assetId],
                 ['price_eur' => $quote['eur'], 'fetched_at' => now()],
             );
 
