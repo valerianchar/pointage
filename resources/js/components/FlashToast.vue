@@ -32,6 +32,27 @@ watch(
     },
     { immediate: true },
 );
+
+/*
+ * Un formulaire incomplet répond par des erreurs de validation, affichées sous
+ * chaque champ — mais parfois hors écran au moment où l'on appuie sur le
+ * bouton. La notification reprend la première pour qu'on sache toujours
+ * pourquoi rien ne s'est passé.
+ */
+watch(
+    () => page.props.errors,
+    (errors) => {
+        const messages = Object.values(errors ?? {});
+
+        const others = messages.length - 1;
+
+        if (messages.length === 1) {
+            show(messages[0], true);
+        } else if (messages.length > 1) {
+            show(`${messages[0]} (+${others} ${others > 1 ? 'autres champs' : 'autre champ'})`, true);
+        }
+    },
+);
 </script>
 
 <template>
