@@ -28,5 +28,8 @@ scrape_configs:
     # Joint par le réseau « proxy », partagé avec la pile applicative —
     # même chemin que pour Traefik, aucun réseau supplémentaire.
     - job_name: soketi
+      # Soketi omet le Content-Type de ses métriques ; sans repli déclaré,
+      # le Prometheus v3 refuse la cible.
+      fallback_scrape_protocol: PrometheusText0.0.4
       static_configs:
           - targets: ['soketi:9601']
