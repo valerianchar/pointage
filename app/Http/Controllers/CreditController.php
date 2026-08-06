@@ -17,7 +17,7 @@ class CreditController extends Controller
     public function index(Request $request): Response
     {
         $credits = Credit::query()
-            ->whereIn('account_id', $request->user()->accounts()->select('accounts.id'))
+            ->whereIn('account_id', $request->user()->accessibleAccounts()->select('accounts.id'))
             ->with('account')
             ->orderBy('id')
             ->get();

@@ -21,9 +21,9 @@ final class BalanceHistory
     public function weeklyForUser(User $user, CarbonInterface $reference, int $weeks = 8): array
     {
         $firstWeekStart = $reference->copy()->startOfWeek()->subWeeks($weeks - 1);
-        $accountIds = $user->accounts()->select('accounts.id');
+        $accountIds = $user->accessibleAccounts()->select('accounts.id');
 
-        $currentBalanceCents = (int) $user->accounts()->sum('initial_balance_cents')
+        $currentBalanceCents = (int) $user->accessibleAccounts()->sum('initial_balance_cents')
             + (int) Transaction::query()->whereIn('account_id', $accountIds)->sum('amount_cents');
 
         $dailyTotals = Transaction::query()

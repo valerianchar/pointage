@@ -15,7 +15,7 @@ final class CreditTotals
     public function forUser(User $user): array
     {
         $totals = Credit::query()
-            ->whereIn('account_id', $user->accounts()->select('accounts.id'))
+            ->whereIn('account_id', $user->accessibleAccounts()->select('accounts.id'))
             ->selectRaw('COALESCE(SUM(remaining_cents), 0) as remaining_cents')
             ->selectRaw('COALESCE(SUM(monthly_cents), 0) as monthly_cents')
             ->selectRaw('COUNT(*) as credit_count')

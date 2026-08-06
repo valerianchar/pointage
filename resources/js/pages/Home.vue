@@ -32,6 +32,8 @@ const props = defineProps({
     top_expenses: { type: Array, default: () => [] },
     crypto_totals: { type: Object, default: null },
     pea_totals: { type: Object, default: null },
+    /** @type {{id: number, account_name: string, inviter_name: string, accept_url: string, decline_url: string}[]} */
+    invitations: { type: Array, default: () => [] },
 });
 
 const page = usePage();
@@ -149,6 +151,35 @@ const { open: openBugReport } = useBugReport();
                 <PhIcon name="ph-squares-four" class="text-[14px]" />
                 Personnaliser
             </button>
+        </div>
+
+        <!-- Invitations à des comptes joints : elles attendent une réponse ici. -->
+        <div
+            v-for="invitation in props.invitations"
+            :key="invitation.id"
+            class="mt-3 flex flex-wrap items-center gap-2.5 rounded-card border border-accent bg-surface p-3"
+        >
+            <PhIcon name="ph-users" class="text-[18px] text-accent-soft" />
+            <p class="min-w-0 flex-1 text-[13px]">
+                <span class="font-medium">{{ invitation.inviter_name }}</span> vous invite à rejoindre
+                « {{ invitation.account_name }} »
+            </p>
+            <div class="flex shrink-0 gap-2">
+                <button
+                    type="button"
+                    class="btn-outline px-3 py-1.5 text-[13px] lg:text-[12px]"
+                    @click="router.post(invitation.accept_url)"
+                >
+                    Accepter
+                </button>
+                <button
+                    type="button"
+                    class="cursor-pointer rounded-card border border-hairline px-3 py-1.5 text-[13px] text-ink-muted transition-colors hover:border-outline-muted lg:text-[12px]"
+                    @click="router.delete(invitation.decline_url)"
+                >
+                    Refuser
+                </button>
+            </div>
         </div>
 
         <!-- Sélection des widgets : les mêmes partout — grille en desktop, pile en mobile. -->

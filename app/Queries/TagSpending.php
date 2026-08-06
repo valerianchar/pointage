@@ -34,7 +34,7 @@ final class TagSpending
     public function forUserMonth(User $user, CarbonInterface $month, int $limit = 5): array
     {
         return $this->groupedByTag($month)
-            ->whereIn('transactions.account_id', $user->accounts()->select('accounts.id'))
+            ->whereIn('transactions.account_id', $user->accessibleAccounts()->select('accounts.id'))
             ->limit($limit)
             ->get()
             ->map($this->toSpendingRow())

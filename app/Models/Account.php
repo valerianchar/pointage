@@ -74,6 +74,22 @@ class Account extends Model
         return $this->hasMany(AccountClosing::class);
     }
 
+    /** @return HasMany<AccountMember, $this> */
+    public function members(): HasMany
+    {
+        return $this->hasMany(AccountMember::class);
+    }
+
+    /**
+     * Le propriétaire, et les membres dont l'invitation a été acceptée — une
+     * invitation en attente n'ouvre rien.
+     */
+    public function isAccessibleBy(User $user): bool
+    {
+        return $this->user_id === $user->id
+            || $this->members()->accepted()->where('user_id', $user->id)->exists();
+    }
+
     /**
      * Fenêtre de pointage qui contient la date donnée, selon les jours du compte.
      */

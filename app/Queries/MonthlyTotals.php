@@ -16,7 +16,7 @@ final class MonthlyTotals
     public function forUser(User $user, CarbonInterface $month): array
     {
         $totals = Transaction::query()
-            ->whereIn('account_id', $user->accounts()->select('accounts.id'))
+            ->whereIn('account_id', $user->accessibleAccounts()->select('accounts.id'))
             // Une réévaluation de marché n'est ni un ajout ni une dépense.
             ->where('is_revaluation', false)
             ->whereBetween('occurred_on', [

@@ -18,7 +18,7 @@ final class RecurringInstances
     public function forUserMonth(User $user, CarbonInterface $month): Collection
     {
         return Transaction::query()
-            ->whereIn('account_id', $user->accounts()->select('accounts.id'))
+            ->whereIn('account_id', $user->accessibleAccounts()->select('accounts.id'))
             ->whereNotNull('recurring_transaction_id')
             ->whereBetween('occurred_on', [
                 $month->copy()->startOfMonth()->toDateString(),
@@ -39,7 +39,7 @@ final class RecurringInstances
     public function upcomingForUserMonth(User $user, CarbonInterface $month): Collection
     {
         return RecurringTransaction::query()
-            ->whereIn('account_id', $user->accounts()->select('accounts.id'))
+            ->whereIn('account_id', $user->accessibleAccounts()->select('accounts.id'))
             ->where('is_active', true)
             ->whereDoesntHave('transactions', fn ($query) => $query->whereBetween('occurred_on', [
                 $month->copy()->startOfMonth()->toDateString(),

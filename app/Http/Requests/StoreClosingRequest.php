@@ -17,7 +17,8 @@ class StoreClosingRequest extends FormRequest
         return [
             'account_id' => [
                 'required',
-                Rule::exists('accounts', 'id')->where('user_id', $this->user()->id),
+                // Le compte visé : le sien, ou un compte joint où il est membre accepté.
+                Rule::in($this->user()->accessibleAccounts()->pluck('id')->all()),
             ],
             // Un découvert est un solde comme un autre : le négatif est accepté.
             'real_balance' => ['required', new ValidAmount],
@@ -32,7 +33,7 @@ class StoreClosingRequest extends FormRequest
     {
         return [
             'account_id.required' => 'Choisissez le compte à clôturer.',
-            'account_id.exists' => 'Ce compte est introuvable.',
+            'account_id.in' => 'Ce compte est introuvable.',
             'real_balance.required' => 'Saisissez le solde réel de votre relevé.',
             'note.max' => 'Le commentaire ne peut pas dépasser 500 caractères.',
         ];

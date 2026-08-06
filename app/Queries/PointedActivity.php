@@ -30,7 +30,7 @@ final class PointedActivity
      */
     public function forUser(User $user, CarbonInterface $today): array
     {
-        $accounts = $user->accounts()->get();
+        $accounts = $user->accessibleAccounts()->get();
 
         if ($accounts->isEmpty()) {
             return ['expenses_cents' => 0, 'incomes_cents' => 0, 'pointed_count' => 0, 'pending_count' => 0, 'by_tag' => []];

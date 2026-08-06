@@ -14,6 +14,7 @@ use App\Models\Account;
 use App\Models\AssetPrice;
 use App\Models\Position;
 use App\Models\Transaction;
+use App\Models\User;
 use App\Queries\TagSpending;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Collection;
@@ -47,7 +48,48 @@ class AccountController extends Controller
             'credits' => CreditResource::collection($account->credits()->orderBy('id')->get())->resolve(),
             'positions' => $this->positionsWithPrices($account),
             'add_url' => route('transactions.create', ['compte' => $account->id]),
+            'members' => $this->membersOf($account, $request->user()),
+            'can_invite' => $request->user()->can('manageMembers', $account),
+            'invite_url' => route('members.store', $account->id),
         ]);
+    }
+
+    /**
+     * Membres d'un compte joint, propriétaire en tête — les autres types
+     * n'en ont pas.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function membersOf(Account $account, User $viewer): array
+    {
+        if ($account->type !== AccountType::Joint) {
+            return [];
+        }
+
+        $account->loadMissing('user');
+
+        $rows = [[
+            'id' => null,
+            'name' => $account->user->name,
+            'status' => 'owner',
+            'is_me' => $account->user_id === $viewer->id,
+            'remove_url' => null,
+        ]];
+
+        foreach ($account->members()->with('user')->orderBy('id')->get() as $member) {
+            // Chacun peut se retirer lui-même ; le propriétaire peut retirer n'importe qui.
+            $canRemove = $viewer->id === $member->user_id || $viewer->id === $account->user_id;
+
+            $rows[] = [
+                'id' => $member->id,
+                'name' => $member->user->name,
+                'status' => $member->isAccepted() ? 'member' : 'pending',
+                'is_me' => $member->user_id === $viewer->id,
+                'remove_url' => $canRemove ? route('members.destroy', $member->id) : null,
+            ];
+        }
+
+        return $rows;
     }
 
     public function create(): Response

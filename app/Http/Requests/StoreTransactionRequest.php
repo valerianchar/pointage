@@ -18,7 +18,8 @@ class StoreTransactionRequest extends FormRequest
         return [
             'account_id' => [
                 'required',
-                Rule::exists('accounts', 'id')->where('user_id', $this->user()->id),
+                // Le compte visé : le sien, ou un compte joint où il est membre accepté.
+                Rule::in($this->user()->accessibleAccounts()->pluck('id')->all()),
             ],
             'direction' => ['required', Rule::enum(TransactionDirection::class)],
             'amount' => ['required', new ValidAmount(minimumCents: 1)],
@@ -48,7 +49,7 @@ class StoreTransactionRequest extends FormRequest
     {
         return [
             'account_id.required' => 'Choisissez le compte concerné.',
-            'account_id.exists' => 'Ce compte est introuvable.',
+            'account_id.in' => 'Ce compte est introuvable.',
             'label.required' => 'Donnez un libellé à cette opération.',
             'amount.required' => 'Saisissez un montant.',
             'tag_id.exists' => 'Ce tag n’appartient pas à ce compte.',

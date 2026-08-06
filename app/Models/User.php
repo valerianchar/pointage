@@ -6,6 +6,7 @@ use App\Enums\DashboardWidget;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -53,6 +54,30 @@ class User extends Authenticatable
     public function accounts(): HasMany
     {
         return $this->hasMany(Account::class);
+    }
+
+    /** @return HasMany<AccountMember, $this> */
+    public function memberships(): HasMany
+    {
+        return $this->hasMany(AccountMember::class);
+    }
+
+    /**
+     * Tous les comptes où l'utilisateur a sa place : les siens, plus les
+     * comptes joints où son invitation a été acceptée. C'est cette liste —
+     * jamais `accounts()` seule — que lisent l'accueil, les statistiques et
+     * les rappels.
+     *
+     * @return Builder<Account>
+     */
+    public function accessibleAccounts(): Builder
+    {
+        return Account::query()->where(fn (Builder $query) => $query
+            ->where('user_id', $this->id)
+            ->orWhereIn('id', AccountMember::query()
+                ->select('account_id')
+                ->where('user_id', $this->id)
+                ->whereNotNull('accepted_at')));
     }
 
     /** @return HasMany<BugReport, $this> */

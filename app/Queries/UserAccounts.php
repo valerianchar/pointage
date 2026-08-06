@@ -36,8 +36,7 @@ final class UserAccounts
      */
     private function withBalanceAndPending(User $user): Builder
     {
-        return $user->accounts()
-            ->getQuery()
+        return $user->accessibleAccounts()
             // Solde et reste à pointer sont agrégés en base : une requête, pas une par compte.
             ->withSum('transactions', 'amount_cents')
             ->withCount(['transactions as pending_count' => fn ($query) => $query->whereNull('pointed_at')])

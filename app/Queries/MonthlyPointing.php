@@ -16,7 +16,7 @@ final class MonthlyPointing
     public function forUserMonth(User $user, CarbonInterface $month): array
     {
         $counts = Transaction::query()
-            ->whereIn('account_id', $user->accounts()->select('accounts.id'))
+            ->whereIn('account_id', $user->accessibleAccounts()->select('accounts.id'))
             ->whereBetween('occurred_on', [
                 $month->copy()->startOfMonth()->toDateString(),
                 $month->copy()->endOfMonth()->toDateString(),

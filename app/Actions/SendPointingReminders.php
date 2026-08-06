@@ -10,7 +10,8 @@ final class SendPointingReminders
 {
     /**
      * Prévient chaque abonné dont un compte termine sa période de pointage à la
-     * date donnée et garde des opérations non pointées.
+     * date donnée et garde des opérations non pointées. Un compte joint
+     * rappelle tous ses membres : chacun peut pointer.
      *
      * @return int Nombre de rappels envoyés
      */
@@ -20,18 +21,27 @@ final class SendPointingReminders
 
         $accounts = Account::query()
             ->withCount(['transactions as pending_count' => fn ($query) => $query->whereNull('pointed_at')])
-            ->with('user.pushSubscriptions')
+            ->with([
+                'user.pushSubscriptions',
+                'members' => fn ($query) => $query->accepted()->with('user.pushSubscriptions'),
+            ])
             ->get();
 
         foreach ($accounts as $account) {
             $endsToday = $account->pointingPeriod($date)->end->isSameDay($date);
 
-            if (! $endsToday || $account->pending_count === 0 || $account->user->pushSubscriptions->isEmpty()) {
+            if (! $endsToday || $account->pending_count === 0) {
                 continue;
             }
 
-            $account->user->notify(new PointingPeriodEnded($account, $account->pending_count));
-            $sentCount++;
+            $recipients = $account->members->map->user
+                ->prepend($account->user)
+                ->filter(fn ($user) => $user->pushSubscriptions->isNotEmpty());
+
+            foreach ($recipients as $recipient) {
+                $recipient->notify(new PointingPeriodEnded($account, $account->pending_count));
+                $sentCount++;
+            }
         }
 
         return $sentCount;

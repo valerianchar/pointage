@@ -57,8 +57,29 @@ class DashboardController extends Controller
             'expense_cents' => $totals['expense_cents'],
             'balance_history' => $this->balanceHistory->weeklyForUser($user, $month),
             'widgets' => DashboardWidget::describe($enabledWidgets),
+            // Invitations à des comptes joints en attente de réponse.
+            'invitations' => $this->pendingInvitations($user),
             ...$this->widgetData($user, $month, $totals['expense_cents'], $enabledWidgets),
         ]);
+    }
+
+    /**
+     * @return list<array{id: int, account_name: string, inviter_name: string, accept_url: string, decline_url: string}>
+     */
+    private function pendingInvitations(User $user): array
+    {
+        return $user->memberships()
+            ->whereNull('accepted_at')
+            ->with(['account.user', 'inviter'])
+            ->get()
+            ->map(fn ($member): array => [
+                'id' => $member->id,
+                'account_name' => $member->account->name,
+                'inviter_name' => ($member->inviter ?? $member->account->user)->name,
+                'accept_url' => route('members.accept', $member->id),
+                'decline_url' => route('members.destroy', $member->id),
+            ])
+            ->all();
     }
 
     /**

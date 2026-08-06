@@ -21,7 +21,8 @@ class StoreCreditRequest extends FormRequest
         return [
             'account_id' => [
                 'required',
-                Rule::exists('accounts', 'id')->where('user_id', $this->user()->id),
+                // Le compte visé : le sien, ou un compte joint où il est membre accepté.
+                Rule::in($this->user()->accessibleAccounts()->pluck('id')->all()),
             ],
             'name' => ['required', 'string', 'max:120'],
             'monthly' => ['required', new ValidAmount(minimumCents: 1)],
@@ -43,7 +44,7 @@ class StoreCreditRequest extends FormRequest
     {
         return [
             'account_id.required' => 'Choisissez le compte qui porte ce crédit.',
-            'account_id.exists' => 'Ce compte est introuvable.',
+            'account_id.in' => 'Ce compte est introuvable.',
             'name.required' => 'Donnez un nom à ce crédit.',
             'monthly.required' => 'Saisissez la mensualité.',
             'borrowed.required_without' => 'Saisissez le capital emprunté ou le capital restant.',

@@ -9,6 +9,6 @@ class TagPolicy
 {
     public function delete(User $user, Tag $tag): bool
     {
-        return $tag->account->user_id === $user->id;
+        return $tag->account->isAccessibleBy($user);
     }
 }

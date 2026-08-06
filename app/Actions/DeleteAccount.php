@@ -9,7 +9,7 @@ final class DeleteAccount
 {
     /**
      * Supprime un compte et tout ce qu'il porte — opérations, modèles
-     * récurrents, tags, crédits, clôtures.
+     * récurrents, tags, crédits, clôtures, membres du compte joint.
      *
      * La suppression est explicite, enfant par enfant, dans une transaction :
      * les clés étrangères ne cascadent pas, pour qu'aucune suppression de
@@ -24,6 +24,7 @@ final class DeleteAccount
             $account->transactions()->delete();
             $account->recurringTransactions()->delete();
             $account->tags()->delete();
+            $account->members()->delete();
             $account->delete();
         });
     }

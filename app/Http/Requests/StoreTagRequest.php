@@ -15,7 +15,8 @@ class StoreTagRequest extends FormRequest
         return [
             'account_id' => [
                 'required',
-                Rule::exists('accounts', 'id')->where('user_id', $this->user()->id),
+                // Le compte visé : le sien, ou un compte joint où il est membre accepté.
+                Rule::in($this->user()->accessibleAccounts()->pluck('id')->all()),
             ],
             'name' => [
                 'required',

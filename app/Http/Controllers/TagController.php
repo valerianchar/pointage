@@ -16,7 +16,7 @@ class TagController extends Controller
 {
     public function index(Request $request): Response
     {
-        $accounts = $request->user()->accounts()->orderBy('id')->get();
+        $accounts = $request->user()->accessibleAccounts()->orderBy('id')->get();
         $selectedAccount = $accounts->firstWhere('id', $request->integer('compte')) ?? $accounts->first();
 
         return Inertia::render('Tags/Index', [

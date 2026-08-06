@@ -17,7 +17,7 @@ final class MarketTypeTotals
      */
     public function forUser(User $user, AccountType $type, CarbonImmutable $today): ?array
     {
-        $accounts = $user->accounts()
+        $accounts = $user->accessibleAccounts()
             ->where('type', $type)
             ->withSum('transactions', 'amount_cents')
             ->get();

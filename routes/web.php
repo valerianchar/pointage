@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AccountController;
+use App\Http\Controllers\AccountMemberController;
 use App\Http\Controllers\AccountPointingPeriodController;
 use App\Http\Controllers\AccountRevaluationController;
 use App\Http\Controllers\AssetSearchController;
@@ -70,6 +71,13 @@ Route::middleware('auth')->group(function () {
         Route::get('/actifs/recherche', AssetSearchController::class)
             ->middleware('throttle:30,1')
             ->name('assets.search');
+
+        Route::post('/compte/{account}/membres', [AccountMemberController::class, 'store'])
+            ->name('members.store');
+        Route::post('/membres/{member}/accepter', [AccountMemberController::class, 'accept'])
+            ->name('members.accept');
+        Route::delete('/membres/{member}', [AccountMemberController::class, 'destroy'])
+            ->name('members.destroy');
 
         Route::get('/ajouter', [TransactionController::class, 'create'])->name('transactions.create');
         Route::post('/operations', [TransactionController::class, 'store'])->name('transactions.store');

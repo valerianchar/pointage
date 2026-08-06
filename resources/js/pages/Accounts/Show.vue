@@ -22,6 +22,10 @@ const props = defineProps({
     tag_spending: { type: Array, required: true },
     credits: { type: Array, required: true },
     add_url: { type: String, required: true },
+    /** @type {{id: number|null, name: string, status: string, is_me: boolean, remove_url: string|null}[]} */
+    members: { type: Array, default: () => [] },
+    can_invite: { type: Boolean, default: false },
+    invite_url: { type: String, default: '' },
 });
 
 /* Comptes à positions — crypto, PEA : le compte suit la valeur du portefeuille. */
@@ -51,6 +55,38 @@ const confirmingDeletion = ref(false);
 
 function deleteAccount() {
     router.delete(props.account.delete_url);
+}
+
+/* Compte joint : le propriétaire invite par e-mail exact, chacun peut se retirer. */
+const inviting = ref(false);
+const inviteForm = useForm({ email: '' });
+
+/*
+ * Tant qu'une invitation attend sa réponse, le compte joint reste en salle
+ * d'attente : pas d'opérations ni de pointage — on saisit à plusieurs, ou pas.
+ * Retirer l'invitation en souffrance rouvre le compte aussitôt.
+ */
+const pendingMembers = computed(() => props.members.filter((member) => member.status === 'pending'));
+const awaitingMembers = computed(() => props.account.type === 'joint' && pendingMembers.value.length > 0);
+
+const MEMBER_STATUS = {
+    owner: 'Propriétaire',
+    member: 'Membre',
+    pending: 'Invitation en attente',
+};
+
+function submitInvite() {
+    inviteForm.post(props.invite_url, {
+        preserveScroll: true,
+        onSuccess: () => {
+            inviteForm.reset();
+            inviting.value = false;
+        },
+    });
+}
+
+function removeMember(member) {
+    router.delete(member.remove_url, { preserveScroll: true });
 }
 
 /* Réévaluation : recale le solde sur la valeur affichée par le courtier. */
@@ -96,7 +132,21 @@ const pointingLabel = computed(() =>
 
         <p class="mt-3 text-[28px] font-medium lg:hidden"><Amount :cents="props.account.balance_cents" /></p>
 
-        <div class="mt-2.5 grid gap-3.5 lg:mt-5 lg:grid-cols-2">
+        <!-- Salle d'attente du compte joint : tout le monde n'a pas encore répondu. -->
+        <div v-if="awaitingMembers" class="mt-3 rounded-card border border-accent bg-surface p-4 lg:mt-5">
+            <p class="flex items-center gap-2 text-[15px] font-medium lg:text-[14px]">
+                <PhIcon name="ph-clock-countdown" class="text-[18px] text-accent-soft" />
+                En attente des membres
+            </p>
+            <p class="mt-1.5 text-[13px] text-ink-muted lg:text-[12px]">
+                {{ pendingMembers.map((member) => member.name).join(', ') }}
+                {{ pendingMembers.length > 1 ? "n'ont pas encore accepté" : "n'a pas encore accepté" }}
+                l'invitation. Le compte s'ouvrira — opérations, pointage — quand chacun aura répondu.
+                Retirer une invitation en attente le rouvre aussitôt.
+            </p>
+        </div>
+
+        <div v-if="!awaitingMembers" class="mt-2.5 grid gap-3.5 lg:mt-5 lg:grid-cols-2">
             <div class="rounded-card bg-surface px-3 py-2.5 lg:p-4">
                 <div class="flex justify-between text-[13px] lg:text-[12px]">
                     <span>Pointage</span>
@@ -141,7 +191,7 @@ const pointingLabel = computed(() =>
             </div>
         </div>
 
-        <template v-if="showPositions">
+        <template v-if="showPositions && !awaitingMembers">
             <p class="label-caps mt-4 lg:mt-[22px]">Positions</p>
 
             <div v-if="props.positions.length > 0" class="mt-1.5 flex flex-col gap-[7px] lg:gap-2">
@@ -225,24 +275,102 @@ const pointingLabel = computed(() =>
             </p>
         </template>
 
-        <template v-if="props.credits.length > 0">
+        <!-- Compte joint : qui partage ce compte, et l'invitation en un e-mail. -->
+        <template v-if="props.account.type === 'joint'">
+            <p class="label-caps mt-4 lg:mt-[22px]">Membres</p>
+
+            <div class="mt-1.5 flex flex-col gap-[7px] lg:gap-2">
+                <div
+                    v-for="member in props.members"
+                    :key="member.id ?? 'proprietaire'"
+                    class="flex items-center gap-2.5 rounded-card bg-surface px-3 py-2.5 lg:gap-3 lg:px-4 lg:py-3"
+                >
+                    <div class="min-w-0 flex-1">
+                        <p class="truncate text-[15px] font-medium lg:text-[13px]">
+                            {{ member.name }}<span v-if="member.is_me" class="text-ink-muted"> — vous</span>
+                        </p>
+                        <p
+                            class="mt-px text-[12px] lg:text-[11px]"
+                            :class="member.status === 'pending' ? 'text-accent-soft' : 'text-ink-muted'"
+                        >
+                            {{ MEMBER_STATUS[member.status] }}
+                        </p>
+                    </div>
+                    <button
+                        v-if="member.remove_url && member.is_me"
+                        type="button"
+                        class="shrink-0 cursor-pointer text-[13px] text-ink-muted transition-colors hover:text-accent-soft lg:text-[12px]"
+                        @click="removeMember(member)"
+                    >
+                        Quitter
+                    </button>
+                    <button
+                        v-else-if="member.remove_url"
+                        type="button"
+                        class="shrink-0 cursor-pointer text-[14px] text-ink-muted transition-colors hover:text-accent-soft"
+                        :aria-label="`Retirer ${member.name} du compte`"
+                        @click="removeMember(member)"
+                    >
+                        <PhIcon name="ph-x" />
+                    </button>
+                </div>
+            </div>
+
+            <button
+                v-if="props.can_invite && !inviting"
+                type="button"
+                class="mt-2 cursor-pointer text-[13px] text-accent-soft transition-colors hover:text-ink lg:text-[12px]"
+                @click="inviting = true"
+            >
+                + Inviter un membre
+            </button>
+            <form v-else-if="props.can_invite" class="mt-2 rounded-card bg-surface p-3" @submit.prevent="submitInvite">
+                <div class="flex gap-1.5 lg:gap-2">
+                    <input
+                        v-model="inviteForm.email"
+                        type="email"
+                        class="field min-w-0 flex-1 bg-page!"
+                        placeholder="E-mail exact de la personne"
+                        aria-label="E-mail de la personne à inviter"
+                    />
+                    <button
+                        type="submit"
+                        class="btn-outline shrink-0 px-3 text-[14px] lg:text-[13px]"
+                        :disabled="inviteForm.processing"
+                    >
+                        Inviter
+                    </button>
+                </div>
+                <p v-if="inviteForm.errors.email" class="mt-1.5 text-[13px] text-accent-soft">
+                    {{ inviteForm.errors.email }}
+                </p>
+            </form>
+            <p v-if="props.can_invite" class="mt-1.5 text-[11px] text-ink-faint lg:text-[10px]">
+                La personne doit déjà avoir son profil ici. Elle recevra l'invitation sur son accueil —
+                le compte ne lui est ouvert qu'après acceptation.
+            </p>
+        </template>
+
+        <template v-if="props.credits.length > 0 && !awaitingMembers">
             <p class="label-caps mt-4 mb-1.5 lg:mt-[22px] lg:mb-2">Crédits sur ce compte</p>
             <div class="flex flex-col gap-[7px] lg:grid lg:grid-cols-2 lg:gap-3.5">
                 <CreditSummaryCard v-for="credit in props.credits" :key="credit.id" :credit="credit" />
             </div>
         </template>
 
-        <div class="mt-4 flex items-baseline justify-between lg:mt-[26px]">
-            <p class="label-caps">Opérations — {{ props.month_label.toLowerCase() }}</p>
-            <Link :href="props.add_url" class="text-[13px] text-accent-soft lg:text-[12px]">+ Ajouter</Link>
-        </div>
+        <template v-if="!awaitingMembers">
+            <div class="mt-4 flex items-baseline justify-between lg:mt-[26px]">
+                <p class="label-caps">Opérations — {{ props.month_label.toLowerCase() }}</p>
+                <Link :href="props.add_url" class="text-[13px] text-accent-soft lg:text-[12px]">+ Ajouter</Link>
+            </div>
 
-        <p v-if="props.transactions.length === 0" class="mt-3 text-[15px] text-ink-muted">
-            Aucune opération ce mois-ci.
-        </p>
+            <p v-if="props.transactions.length === 0" class="mt-3 text-[15px] text-ink-muted">
+                Aucune opération ce mois-ci.
+            </p>
 
-        <TransactionList :transactions="props.transactions" class="mt-0.5" />
-        <TransactionTable :transactions="props.transactions" class="mt-1" />
+            <TransactionList :transactions="props.transactions" class="mt-0.5" />
+            <TransactionTable :transactions="props.transactions" class="mt-1" />
+        </template>
 
         <!-- Suppression du compte : rare et irréversible, donc reléguée tout en
              bas et protégée par une confirmation explicite. -->

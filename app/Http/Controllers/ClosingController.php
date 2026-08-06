@@ -25,7 +25,7 @@ class ClosingController extends Controller
         $today = CarbonImmutable::now();
 
         $closings = AccountClosing::query()
-            ->whereIn('account_id', $request->user()->accounts()->select('accounts.id'))
+            ->whereIn('account_id', $request->user()->accessibleAccounts()->select('accounts.id'))
             ->with('account')
             ->orderByDesc('period_end')
             ->orderByDesc('id')

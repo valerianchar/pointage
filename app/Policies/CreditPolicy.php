@@ -9,6 +9,6 @@ class CreditPolicy
 {
     public function delete(User $user, Credit $credit): bool
     {
-        return $credit->account->user_id === $user->id;
+        return $credit->account->isAccessibleBy($user);
     }
 }

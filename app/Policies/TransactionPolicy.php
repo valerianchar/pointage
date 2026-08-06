@@ -9,11 +9,11 @@ class TransactionPolicy
 {
     public function update(User $user, Transaction $transaction): bool
     {
-        return $transaction->account->user_id === $user->id;
+        return $transaction->account->isAccessibleBy($user);
     }
 
     public function delete(User $user, Transaction $transaction): bool
     {
-        return $transaction->account->user_id === $user->id;
+        return $transaction->account->isAccessibleBy($user);
     }
 }
