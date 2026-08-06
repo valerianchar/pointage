@@ -21,6 +21,7 @@ export const routes = {
     tags: '/tags',
     bugReports: '/signalements',
     pushSubscription: '/notifications/abonnement',
+    assetSearch: '/actifs/recherche',
     privacy: '/confidentialite',
     widgets: '/widgets',
     account: (accountId) => `/compte/${accountId}`,

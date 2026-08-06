@@ -3,6 +3,7 @@
 use App\Http\Controllers\AccountController;
 use App\Http\Controllers\AccountPointingPeriodController;
 use App\Http\Controllers\AccountRevaluationController;
+use App\Http\Controllers\AssetSearchController;
 use App\Http\Controllers\Auth\AppLockController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\RegisteredUserController;
@@ -66,6 +67,9 @@ Route::middleware('auth')->group(function () {
             ->name('positions.sync');
         Route::delete('/positions/{position}', [PositionController::class, 'destroy'])
             ->name('positions.destroy');
+        Route::get('/actifs/recherche', AssetSearchController::class)
+            ->middleware('throttle:30,1')
+            ->name('assets.search');
 
         Route::get('/ajouter', [TransactionController::class, 'create'])->name('transactions.create');
         Route::post('/operations', [TransactionController::class, 'store'])->name('transactions.store');
