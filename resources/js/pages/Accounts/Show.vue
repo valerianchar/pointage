@@ -109,7 +109,19 @@ const pointingLabel = computed(() =>
                 >
                     Pointer maintenant, relevé en main →
                 </Link>
+                <!-- Avec des positions, la synchro remplace la saisie manuelle :
+                     les deux gestes recaleraient le même solde, chacun de son côté. -->
                 <button
+                    v-if="props.positions.length > 0"
+                    type="button"
+                    class="mt-2 flex cursor-pointer items-center gap-1.5 text-[13px] text-accent-soft transition-colors hover:text-ink lg:mt-2.5 lg:text-[12px]"
+                    @click="syncPositions"
+                >
+                    <PhIcon name="ph-arrows-clockwise" class="text-[14px]" />
+                    Rafraîchir — cours et solde du jour
+                </button>
+                <button
+                    v-else
                     type="button"
                     class="mt-2 flex cursor-pointer items-center gap-1.5 text-[13px] text-accent-soft transition-colors hover:text-ink lg:mt-2.5 lg:text-[12px]"
                     @click="revaluing = true"
@@ -129,17 +141,7 @@ const pointingLabel = computed(() =>
         </div>
 
         <template v-if="showPositions">
-            <div class="mt-4 flex items-baseline justify-between lg:mt-[22px]">
-                <p class="label-caps">Positions</p>
-                <button
-                    v-if="props.positions.length > 0"
-                    type="button"
-                    class="cursor-pointer text-[13px] text-accent-soft transition-colors hover:text-ink lg:text-[12px]"
-                    @click="syncPositions"
-                >
-                    Synchroniser maintenant
-                </button>
-            </div>
+            <p class="label-caps mt-4 lg:mt-[22px]">Positions</p>
 
             <div v-if="props.positions.length > 0" class="mt-1.5 flex flex-col gap-[7px] lg:gap-2">
                 <div
