@@ -26,6 +26,12 @@ class StoreAccountRequest extends FormRequest
             'positions' => ['nullable', 'array', 'max:30'],
             'positions.*.asset_id' => ['required', 'string', 'max:64'],
             'positions.*.quantity' => ['required', 'numeric', 'gt:0'],
+            /*
+             * Compte joint : les personnes à inviter dès la déclaration —
+             * un compte joint se partage, il en faut au moins une.
+             */
+            'members' => ['nullable', 'array', 'max:10'],
+            'members.*' => ['required', 'email'],
         ];
     }
 
@@ -41,6 +47,8 @@ class StoreAccountRequest extends FormRequest
             'positions.*.quantity.required' => 'Chaque position doit porter une quantité.',
             'positions.*.quantity.gt' => 'La quantité doit être supérieure à zéro.',
             'positions.*.quantity.numeric' => 'La quantité est un nombre — point ou virgule acceptés.',
+            'members.*.required' => 'Indiquez l\'e-mail du membre à inviter.',
+            'members.*.email' => 'Cet e-mail est invalide.',
         ];
     }
 
@@ -67,6 +75,24 @@ class StoreAccountRequest extends FormRequest
     public function accountType(): AccountType
     {
         return AccountType::from($this->string('type')->value());
+    }
+
+    /**
+     * E-mails des membres à inviter sur un compte joint, dédoublonnés.
+     *
+     * @return list<string>
+     */
+    public function memberEmails(): array
+    {
+        if ($this->accountType() !== AccountType::Joint) {
+            return [];
+        }
+
+        return collect($this->input('members') ?? [])
+            ->map(fn (string $email): string => mb_strtolower(trim($email)))
+            ->unique()
+            ->values()
+            ->all();
     }
 
     /**

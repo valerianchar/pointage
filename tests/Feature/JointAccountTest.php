@@ -26,6 +26,48 @@ class JointAccountTest extends TestCase
         return Account::factory()->ofType(AccountType::Joint)->create();
     }
 
+    public function test_a_joint_account_is_born_with_at_least_one_invitation(): void
+    {
+        $owner = User::factory()->create();
+        $invitee = User::factory()->create(['email' => 'conjoint@exemple.fr']);
+
+        $this->actingAs($owner)
+            ->post('/comptes', [
+                'name' => 'Compte commun',
+                'type' => AccountType::Joint->value,
+                'initial_balance' => '250',
+                'members' => ['conjoint@exemple.fr'],
+            ])
+            ->assertRedirect();
+
+        $account = $owner->accounts()->sole();
+        $member = $account->members()->sole();
+
+        $this->assertSame($invitee->id, $member->user_id);
+        $this->assertSame($owner->id, $member->invited_by);
+        $this->assertFalse($member->isAccepted());
+    }
+
+    public function test_a_joint_account_without_anyone_to_invite_is_refused(): void
+    {
+        $owner = User::factory()->create();
+
+        $this->actingAs($owner)
+            ->post('/comptes', ['name' => 'Commun', 'type' => AccountType::Joint->value, 'members' => []])
+            ->assertSessionHasErrors('members');
+
+        // E-mail inconnu : le compte n'est pas créé non plus.
+        $this->actingAs($owner)
+            ->post('/comptes', [
+                'name' => 'Commun',
+                'type' => AccountType::Joint->value,
+                'members' => ['personne@exemple.fr'],
+            ])
+            ->assertSessionHasErrors('members');
+
+        $this->assertSame(0, $owner->accounts()->count());
+    }
+
     public function test_the_owner_invites_by_exact_email_and_no_access_opens_before_acceptance(): void
     {
         $account = $this->jointAccount();

@@ -19,6 +19,8 @@ const form = useForm({
     type: props.types[0].value,
     /* Comptes à positions (crypto, PEA) : les avoirs remplacent le solde. */
     positions: [{ asset_id: '', quantity: '' }],
+    /* Compte joint : il se partage, au moins une personne à inviter. */
+    members: [''],
 });
 
 const selectedType = computed(() => props.types.find((type) => type.value === form.type) ?? props.types[0]);
@@ -30,6 +32,22 @@ function errorsOfRow(index) {
         .filter(([key]) => key.startsWith(`positions.${index}.`))
         .map(([, message]) => message);
 }
+
+const isJoint = computed(() => form.type === 'joint');
+
+function addMemberRow() {
+    form.members.push('');
+}
+
+function removeMemberRow(index) {
+    form.members.splice(index, 1);
+}
+
+const memberErrors = computed(() =>
+    [...new Set(Object.entries(form.errors)
+        .filter(([key]) => key === 'members' || key.startsWith('members.'))
+        .map(([, message]) => message))],
+);
 
 function addPositionRow() {
     form.positions.push({ asset_id: '', quantity: '' });
@@ -51,14 +69,23 @@ function submit() {
         );
     }
 
+    if (isJoint.value) {
+        form.members = form.members.filter((email) => email.trim() !== '');
+    }
+
     form.transform((data) => ({
         ...data,
         /* Seuls les comptes à positions en envoient. */
         positions: selectedType.value.has_positions ? data.positions : [],
+        /* Et seuls les comptes joints invitent. */
+        members: isJoint.value ? data.members : [],
     })).post(routes.accountStore, {
         onError: () => {
             if (selectedType.value.has_positions && form.positions.length === 0) {
                 addPositionRow();
+            }
+            if (isJoint.value && form.members.length === 0) {
+                addMemberRow();
             }
         },
     });
@@ -148,6 +175,46 @@ function submit() {
                 <p class="mt-1.5 text-[11px] text-ink-faint lg:text-[10px]">
                     Le solde du compte naîtra de la valeur de ces positions, cours
                     {{ selectedType.price_source }} du jour, puis suivra le marché chaque nuit.
+                </p>
+            </template>
+
+            <!-- Compte joint : il se partage — au moins une personne à inviter,
+                 le compte s'ouvrira quand chacun aura accepté. -->
+            <template v-if="isJoint">
+                <p class="label-caps mt-3.5 mb-1.5 lg:mt-4">Membres à inviter</p>
+                <div class="flex flex-col gap-1.5 lg:gap-2">
+                    <div v-for="(email, index) in form.members" :key="index" class="flex gap-1.5 lg:gap-2">
+                        <input
+                            v-model="form.members[index]"
+                            type="email"
+                            class="field min-w-0 flex-1"
+                            placeholder="E-mail exact de la personne"
+                            :aria-label="`E-mail du membre ${index + 1}`"
+                        />
+                        <button
+                            v-if="form.members.length > 1"
+                            type="button"
+                            class="shrink-0 cursor-pointer px-1 text-[14px] text-ink-muted transition-colors hover:text-accent-soft"
+                            :aria-label="`Retirer le membre ${index + 1}`"
+                            @click="removeMemberRow(index)"
+                        >
+                            <PhIcon name="ph-x" />
+                        </button>
+                    </div>
+                </div>
+                <button
+                    type="button"
+                    class="mt-2 cursor-pointer text-[13px] text-accent-soft transition-colors hover:text-ink lg:text-[12px]"
+                    @click="addMemberRow"
+                >
+                    + Inviter une autre personne
+                </button>
+                <p v-for="message in memberErrors" :key="message" class="mt-1.5 text-[13px] text-accent-soft">
+                    {{ message }}
+                </p>
+                <p class="mt-1.5 text-[11px] text-ink-faint lg:text-[10px]">
+                    Chaque personne doit déjà avoir son profil ici. Le compte restera en attente —
+                    sans opérations ni pointage — jusqu'à ce que chacune ait accepté.
                 </p>
             </template>
 

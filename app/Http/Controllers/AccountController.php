@@ -15,13 +15,16 @@ use App\Models\AssetPrice;
 use App\Models\Position;
 use App\Models\Transaction;
 use App\Models\User;
+use App\Notifications\JointAccountInvitation;
 use App\Queries\TagSpending;
 use Carbon\CarbonImmutable;
-use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -117,19 +120,67 @@ class AccountController extends Controller
             ? $request->initialBalanceCents()
             : $this->portfolioValueCents($ensureAssetPrices, $type, $positions);
 
+        // Un compte joint se partage : il naît avec au moins une invitation.
+        $invitees = $type === AccountType::Joint
+            ? $this->resolveInvitees($request->user(), $request->memberEmails())
+            : collect();
+
         $account = $createAccount->handle(
             $request->user(),
             $request->string('name')->trim()->value(),
             $type,
             $initialBalanceCents,
             $positions,
+            $invitees->pluck('id')->all(),
         );
 
-        return redirect()
-            ->route('accounts.show', $account)
-            ->with('success', $positions === []
-                ? 'Compte créé, avec ses tags par défaut.'
-                : 'Compte créé — son solde suivra les cours chaque nuit.');
+        foreach ($invitees as $invitee) {
+            if ($invitee->pushSubscriptions()->exists()) {
+                $invitee->notify(new JointAccountInvitation($account, $request->user()));
+            }
+        }
+
+        $message = match (true) {
+            $invitees->isNotEmpty() => 'Compte joint créé — en attente de la réponse des membres invités.',
+            $positions !== [] => 'Compte créé — son solde suivra les cours chaque nuit.',
+            default => 'Compte créé, avec ses tags par défaut.',
+        };
+
+        return redirect()->route('accounts.show', $account)->with('success', $message);
+    }
+
+    /**
+     * Résout les e-mails invités en utilisateurs — chacun doit exister, et un
+     * compte joint sans personne à inviter n'a pas de raison d'être.
+     *
+     * @param  list<string>  $emails
+     * @return Collection<int, User>
+     */
+    private function resolveInvitees(User $owner, array $emails): Collection
+    {
+        if ($emails === []) {
+            throw ValidationException::withMessages([
+                'members' => 'Un compte joint se partage : invitez au moins une personne.',
+            ]);
+        }
+
+        return collect($emails)->map(function (string $email) use ($owner): User {
+            $invitee = User::query()->where('email', $email)->first();
+
+            if ($invitee === null) {
+                throw ValidationException::withMessages([
+                    'members' => "Aucun utilisateur avec « {$email} » — il doit d'abord créer son profil.",
+                ]);
+            }
+
+            if ($invitee->is($owner)) {
+                throw ValidationException::withMessages([
+                    'members' => 'Inutile de vous inviter vous-même : vous êtes le propriétaire.',
+                ]);
+            }
+
+            return $invitee;
+        });
     }
 
     /**
@@ -201,9 +252,9 @@ class AccountController extends Controller
      * Opérations du mois affiché, plus toutes celles restées à pointer les mois
      * précédents : une opération non pointée ne doit jamais devenir inatteignable.
      *
-     * @return Collection<int, Transaction>
+     * @return EloquentCollection<int, Transaction>
      */
-    private function visibleTransactions(Account $account, CarbonImmutable $month): Collection
+    private function visibleTransactions(Account $account, CarbonImmutable $month): EloquentCollection
     {
         return $account->transactions()
             ->with('tag')

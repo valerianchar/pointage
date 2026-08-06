@@ -11,13 +11,15 @@ final class CreateAccount
 {
     /**
      * Déclare un compte et crée d'emblée les tags par défaut de son type —
-     * et, pour un compte de marché, les positions déclarées à la volée.
+     * et, selon le type, les positions du compte de marché ou les invitations
+     * du compte joint.
      *
      * @param  list<array{asset_id: string, quantity: string}>  $positions
+     * @param  list<int>  $memberIds  Utilisateurs invités, en attente d'acceptation
      */
-    public function handle(User $user, string $name, AccountType $type, int $initialBalanceCents, array $positions = []): Account
+    public function handle(User $user, string $name, AccountType $type, int $initialBalanceCents, array $positions = [], array $memberIds = []): Account
     {
-        return DB::transaction(function () use ($user, $name, $type, $initialBalanceCents, $positions): Account {
+        return DB::transaction(function () use ($user, $name, $type, $initialBalanceCents, $positions, $memberIds): Account {
             $account = $user->accounts()->create([
                 'name' => $name,
                 'type' => $type,
@@ -35,6 +37,13 @@ final class CreateAccount
                     'label' => $position['asset_id'],
                     'quantity' => $position['quantity'],
                 ], $positions)
+            );
+
+            $account->members()->createMany(
+                array_map(fn (int $memberId): array => [
+                    'user_id' => $memberId,
+                    'invited_by' => $user->id,
+                ], $memberIds)
             );
 
             return $account;
