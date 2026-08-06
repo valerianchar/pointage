@@ -47,6 +47,7 @@
 .ph-chart-line-up::before { content: '\e156'; }
 .ph-check::before { content: '\e182'; }
 .ph-check-circle::before { content: '\e184'; }
+.ph-clock-countdown::before { content: '\ed2c'; }
 .ph-currency-btc::before { content: '\e618'; }
 .ph-eye::before { content: '\e220'; }
 .ph-eye-slash::before { content: '\e224'; }

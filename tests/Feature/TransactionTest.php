@@ -68,6 +68,56 @@ class TransactionTest extends TestCase
         $this->assertSame(193_510, $account->fresh()->balance_cents);
     }
 
+    public function test_a_deferred_expense_counts_immediately_and_waits_for_its_statement(): void
+    {
+        $user = User::factory()->create();
+        $account = Account::factory()->for($user)->startingAt(200_000)->create();
+        $inThreeDays = now()->addDays(3)->toDateString();
+
+        $this->actingAs($user)
+            ->post('/operations', [
+                'account_id' => $account->id,
+                'direction' => TransactionDirection::Expense->value,
+                'amount' => '350',
+                'label' => 'Hôtel Lisbonne',
+                'is_recurring' => false,
+                'occurred_on' => $inThreeDays,
+            ])
+            ->assertRedirect("/compte/{$account->id}")
+            ->assertSessionHas('success', 'Opération différée enregistrée : elle pèse déjà sur le solde.');
+
+        $transaction = $account->transactions()->sole();
+
+        // Datée du prélèvement, non pointée — mais déjà décomptée du solde.
+        $this->assertSame($inThreeDays, $transaction->occurred_on->toDateString());
+        $this->assertNull($transaction->pointed_at);
+        $this->assertSame(165_000, $account->fresh()->balance_cents);
+    }
+
+    public function test_a_recurring_operation_ignores_the_one_off_date(): void
+    {
+        $user = User::factory()->create();
+        $account = Account::factory()->for($user)->create();
+
+        $this->actingAs($user)
+            ->post('/operations', [
+                'account_id' => $account->id,
+                'direction' => TransactionDirection::Expense->value,
+                'amount' => '9,99',
+                'label' => 'Netflix',
+                'is_recurring' => true,
+                'recurring_day' => 1,
+                'occurred_on' => now()->addDays(12)->toDateString(),
+            ])
+            ->assertRedirect();
+
+        // Le jour du mois fait foi : l'instance du mois est née le 1er, pas à la date envoyée.
+        $this->assertSame(
+            now()->startOfMonth()->toDateString(),
+            $account->transactions()->sole()->occurred_on->toDateString(),
+        );
+    }
+
     public function test_an_addition_is_recorded_positive(): void
     {
         $user = User::factory()->create();

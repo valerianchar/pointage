@@ -53,6 +53,12 @@ const props = defineProps({
                                 class="text-[12px] text-ink-muted"
                                 title="Réévaluation de marché"
                             />
+                            <PhIcon
+                                v-if="transaction.is_upcoming"
+                                name="ph-clock-countdown"
+                                class="text-[12px] text-accent-soft"
+                                title="À venir — pèse déjà sur le solde"
+                            />
                         </span>
                     </td>
                     <td class="py-2.5">

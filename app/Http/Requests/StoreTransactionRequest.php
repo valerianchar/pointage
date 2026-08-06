@@ -31,6 +31,11 @@ class StoreTransactionRequest extends FormRequest
             'is_recurring' => ['boolean'],
             // Jour de chaque mois où la récurrente doit se produire.
             'recurring_day' => ['nullable', 'integer', 'min:1', 'max:31'],
+            /*
+             * Date de l'opération ponctuelle — passée pour un rattrapage, future
+             * pour une dépense différée (voyage débité dans quelques jours…).
+             */
+            'occurred_on' => ['nullable', 'date'],
             // Un oubli ajouté depuis la clôture est déjà sur le relevé : il naît pointé.
             'pointed' => ['boolean'],
         ];
@@ -50,6 +55,7 @@ class StoreTransactionRequest extends FormRequest
             'recurring_day.min' => 'Le jour va du 1 au 31.',
             'recurring_day.max' => 'Le jour va du 1 au 31.',
             'recurring_day.integer' => 'Le jour va du 1 au 31.',
+            'occurred_on.date' => 'Cette date est invalide.',
         ];
     }
 

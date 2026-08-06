@@ -15,6 +15,9 @@ const props = defineProps({
     selected_account_id: { type: Number, default: null },
 });
 
+/* Date locale au format AAAA-MM-JJ — toISOString() glisserait d'un jour selon le fuseau. */
+const today = new Date().toLocaleDateString('fr-CA');
+
 const form = useForm({
     account_id: props.selected_account_id,
     direction: props.directions[0].value,
@@ -23,6 +26,7 @@ const form = useForm({
     tag_id: null,
     is_recurring: false,
     recurring_day: new Date().getDate(),
+    occurred_on: today,
 });
 
 const selectedAccount = computed(() => props.accounts.find((account) => account.id === form.account_id) ?? null);
@@ -72,6 +76,17 @@ function submit() {
                 </FormField>
             </div>
 
+            <!-- Une récurrente se date par son jour du mois ; la ponctuelle choisit
+                 sa date — future pour une dépense différée, débitée dans quelques jours. -->
+            <div v-if="!form.is_recurring" class="mt-3 lg:mt-3.5">
+                <FormField label="Date" :error="form.errors.occurred_on">
+                    <input v-model="form.occurred_on" type="date" class="field" />
+                </FormField>
+                <p v-if="form.occurred_on > today" class="mt-1 text-[12px] text-ink-muted lg:text-[11px]">
+                    Dépense différée : elle pèse sur le solde dès maintenant, à pointer à son passage sur le relevé.
+                </p>
+            </div>
+
             <p class="label-caps mt-3 mb-1.5 lg:mt-4">Compte</p>
             <div class="flex flex-wrap gap-[5px] lg:gap-1.5">
                 <Chip
@@ -102,6 +117,7 @@ function submit() {
                 Ce compte n'a plus de tag.
                 <Link :href="routes.tagsFor(form.account_id)" class="text-accent-soft">En ajouter un</Link>.
             </p>
+            <p v-if="form.errors.tag_id" class="mt-1.5 text-[13px] text-accent-soft">{{ form.errors.tag_id }}</p>
 
             <div class="mt-4 flex items-center justify-between lg:mt-5">
                 <div>
