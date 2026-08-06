@@ -31,8 +31,8 @@ class DashboardController extends Controller
     ) {}
 
     /**
-     * Accueil : mise en page fixe sur mobile, grille de widgets personnalisable
-     * sur desktop.
+     * Accueil : la même sélection de widgets partout — grille sur desktop,
+     * pile sous le patrimoine sur mobile.
      *
      * La liste des comptes vient des propriétés partagées — la sidebar en a besoin
      * partout — d'où sont déduits côté front le patrimoine et la répartition.
@@ -47,8 +47,8 @@ class DashboardController extends Controller
         return Inertia::render('Home', [
             'month_label' => Str::ucfirst($month->translatedFormat('F Y')),
             /*
-             * Flux du mois et évolution du solde restent envoyés quels que soient les
-             * widgets choisis : l'accueil mobile les affiche sans être personnalisable.
+             * Flux du mois et évolution du solde restent envoyés quels que soient
+             * les widgets choisis : leurs widgets n'ont pas de calcul dédié.
              */
             'income_cents' => $totals['income_cents'],
             'expense_cents' => $totals['expense_cents'],

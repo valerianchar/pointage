@@ -7,7 +7,9 @@ const props = defineProps({
 </script>
 
 <template>
-    <div class="rounded-card bg-surface p-3" :class="props.span === 2 ? 'col-span-2' : ''">
+    <!-- La double largeur n'a de sens que sur la grille desktop : en mobile,
+         la colonne est unique. -->
+    <div class="rounded-card bg-surface p-3" :class="props.span === 2 ? 'lg:col-span-2' : ''">
         <p class="text-[10px] tracking-[0.06em] text-ink-muted uppercase">{{ props.title }}</p>
         <slot />
     </div>

@@ -23,7 +23,7 @@ const props = defineProps({
     balance_history: { type: Array, required: true },
     /** @type {{key: string, label: string, title: string, span: number, enabled: boolean}[]} */
     widgets: { type: Array, required: true },
-    /* Chaque widget desktop n'est envoyé que s'il est affiché. */
+    /* Chaque widget optionnel n'est envoyé que s'il est affiché. */
     pointing: { type: Object, default: null },
     daily_expense: { type: Object, default: null },
     recurring_charge: { type: Object, default: null },
@@ -41,11 +41,6 @@ const accounts = computed(() => page.props.accounts);
 const totalBalanceCents = computed(() =>
     accounts.value.reduce((total, account) => total + account.balance_cents, 0),
 );
-
-// Les deux barres se comparent entre elles : la plus haute occupe toute la piste.
-const busiestFlowCents = computed(() => Math.max(props.income_cents, props.expense_cents, 1));
-const incomePercent = computed(() => shareOf(props.income_cents, busiestFlowCents.value));
-const expensePercent = computed(() => shareOf(props.expense_cents, busiestFlowCents.value));
 
 const netCents = computed(() => props.income_cents - props.expense_cents);
 
@@ -112,6 +107,16 @@ const { open: openBugReport } = useBugReport();
                 <button
                     type="button"
                     class="cursor-pointer text-ink-muted transition-colors hover:text-accent-soft"
+                    title="Personnaliser les widgets"
+                    aria-label="Personnaliser les widgets"
+                    :aria-expanded="isCustomizing"
+                    @click="isCustomizing = !isCustomizing"
+                >
+                    <PhIcon name="ph-squares-four" />
+                </button>
+                <button
+                    type="button"
+                    class="cursor-pointer text-ink-muted transition-colors hover:text-accent-soft"
                     title="Signaler un bug"
                     aria-label="Signaler un bug"
                     @click="openBugReport"
@@ -140,8 +145,8 @@ const { open: openBugReport } = useBugReport();
             </button>
         </div>
 
-        <!-- Sélection des widgets : propre au desktop, où l'accueil est une grille. -->
-        <div v-if="isCustomizing" class="mt-3 hidden rounded-card bg-surface p-3 lg:block">
+        <!-- Sélection des widgets : les mêmes partout — grille en desktop, pile en mobile. -->
+        <div v-if="isCustomizing" class="mt-3 rounded-card bg-surface p-3">
             <p class="label-caps mb-2">Widgets affichés</p>
             <div class="flex flex-wrap gap-1.5">
                 <Chip
@@ -155,37 +160,23 @@ const { open: openBugReport } = useBugReport();
             </div>
         </div>
 
-        <!-- Mobile : patrimoine en grand, puis une carte qui rassemble flux et évolution. -->
+        <!-- Mobile : le patrimoine reste en grand au-dessus des widgets. -->
         <div class="lg:hidden">
             <p class="mt-3 text-[30px] font-medium"><Amount :cents="totalBalanceCents" /></p>
             <p class="text-[13px] text-ink-muted">Patrimoine total</p>
-
-            <div class="mt-3.5 rounded-card bg-surface p-3">
-                <div class="flex justify-between text-[13px]">
-                    <span class="text-ink-muted">Ajouts du mois</span>
-                    <Amount :cents="props.income_cents" signed class="text-accent-soft" />
-                </div>
-                <Gauge :percent="incomePercent" label="Ajouts du mois" class="my-[5px]" />
-
-                <div class="mt-2.5 flex justify-between text-[13px]">
-                    <span class="text-ink-muted">Dépenses du mois</span>
-                    <Amount :cents="-props.expense_cents" signed />
-                </div>
-                <Gauge
-                    :percent="expensePercent"
-                    label="Dépenses du mois"
-                    bar-class="bg-gauge-neutral"
-                    class="mt-[5px] mb-3"
-                />
-
-                <Sparkline :points="props.balance_history" class="h-[34px] gap-[3px]" />
-                <p class="mt-1.5 text-[12px] text-ink-muted">Évolution du solde — 8 dernières semaines</p>
-            </div>
         </div>
 
-        <!-- Desktop : grille de quatre colonnes, chaque widget en occupant une ou deux. -->
-        <div class="mt-3.5 hidden grid-cols-4 gap-2.5 lg:grid">
-            <WidgetCard v-if="shows(WIDGET.wealth)" :title="titleOf(WIDGET.wealth)" :span="spanOf(WIDGET.wealth)">
+        <!-- Grille de quatre colonnes en desktop — chaque widget en occupant une ou
+             deux —, colonne unique en mobile. -->
+        <div class="mt-3.5 grid grid-cols-1 gap-2.5 lg:grid-cols-4">
+            <!-- En mobile, le patrimoine trône déjà au-dessus de la pile : sa carte
+                 ne s'affiche qu'en desktop. -->
+            <WidgetCard
+                v-if="shows(WIDGET.wealth)"
+                :title="titleOf(WIDGET.wealth)"
+                :span="spanOf(WIDGET.wealth)"
+                class="max-lg:hidden"
+            >
                 <p class="mt-[5px] text-xl font-medium"><Amount :cents="totalBalanceCents" /></p>
                 <p class="mt-0.5 text-[10px] text-ink-muted">
                     {{ accounts.length }} {{ accounts.length > 1 ? 'comptes' : 'compte' }}
