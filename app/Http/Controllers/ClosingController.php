@@ -72,6 +72,8 @@ class ClosingController extends Controller
             ->where(fn ($query) => $query
                 ->whereBetween('occurred_on', [$period->start->toDateString(), $period->end->toDateString()])
                 ->orWhereNull('pointed_at'))
+            // Une opération à venir n'est pas sur le relevé : rien à pointer.
+            ->where('occurred_on', '<=', $today->toDateString())
             ->orderBy('occurred_on')
             ->orderBy('id')
             ->get();

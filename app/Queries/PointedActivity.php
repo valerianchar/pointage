@@ -52,11 +52,18 @@ final class PointedActivity
         // Les réévaluations comptent dans le pointage, jamais dans les flux.
         $pointedFlows = $pointed->where('is_revaluation', false);
 
+        /*
+         * Une opération à venir — différée à plus tard dans la fenêtre — n'est
+         * pas encore sur le relevé : elle ne compte pas dans le reste à pointer.
+         */
+        $pending = $inWindow->filter(fn (Transaction $transaction) => ! $transaction->isPointed()
+            && $transaction->occurred_on->lte($today));
+
         return [
             'expenses_cents' => (int) (-1 * $pointedFlows->where('amount_cents', '<', 0)->sum('amount_cents')),
             'incomes_cents' => (int) $pointedFlows->where('amount_cents', '>', 0)->sum('amount_cents'),
             'pointed_count' => $pointed->count(),
-            'pending_count' => $inWindow->count() - $pointed->count(),
+            'pending_count' => $pending->count(),
             'by_tag' => $this->spendingByTag($pointedFlows),
         ];
     }

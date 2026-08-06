@@ -36,7 +36,10 @@ class AccountController extends Controller
         $month = CarbonImmutable::now();
 
         $account->loadSum('transactions', 'amount_cents')
-            ->loadCount(['transactions as pending_count' => fn ($query) => $query->whereNull('pointed_at')]);
+            // Les opérations à venir attendent leur jour pour entrer dans le cycle.
+            ->loadCount(['transactions as pending_count' => fn ($query) => $query
+                ->whereNull('pointed_at')
+                ->where('occurred_on', '<=', $month->toDateString())]);
 
         $transactions = $this->visibleTransactions($account, $month);
 

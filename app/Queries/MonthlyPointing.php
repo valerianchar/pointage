@@ -22,7 +22,11 @@ final class MonthlyPointing
                 $month->copy()->endOfMonth()->toDateString(),
             ])
             ->selectRaw('COUNT(*) as total_count')
-            ->selectRaw('COALESCE(SUM(CASE WHEN pointed_at IS NULL THEN 1 ELSE 0 END), 0) as pending_count')
+            // Une opération à venir n'est pas encore à pointer : elle attend son jour.
+            ->selectRaw(
+                'COALESCE(SUM(CASE WHEN pointed_at IS NULL AND occurred_on <= ? THEN 1 ELSE 0 END), 0) as pending_count',
+                [$month->toDateString()],
+            )
             ->first();
 
         return [

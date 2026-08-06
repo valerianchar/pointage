@@ -65,8 +65,31 @@ watch(
     { immediate: true },
 );
 
+/* Dernier jour du mois respecté : « au 31 » tombe le 28, 29 ou 30 si le mois s'arrête là. */
+function clampedDate(year, monthIndex, day) {
+    const lastDay = new Date(year, monthIndex + 1, 0).getDate();
+    return new Date(year, monthIndex, Math.min(day, lastDay));
+}
+
+/**
+ * La fenêtre courante, résolue sur le calendrier réel : « du 1 août au
+ * 31 août ». Une fenêtre à cheval (25 → 24) démarre au 25 le plus récent.
+ */
 function periodNote(account, startDay, endDay) {
-    return `${account.name} : pointage du ${startDay || '1'} au ${endDay || '31'} de chaque mois.`;
+    const start = Math.min(Math.max(Number(startDay) || 1, 1), 31);
+    const end = Math.min(Math.max(Number(endDay) || 31, 1), 31);
+    const today = new Date();
+
+    const startDate = start <= end || today.getDate() >= start
+        ? clampedDate(today.getFullYear(), today.getMonth(), start)
+        : clampedDate(today.getFullYear(), today.getMonth() - 1, start);
+    const endDate = start <= end
+        ? clampedDate(today.getFullYear(), today.getMonth(), end)
+        : clampedDate(startDate.getFullYear(), startDate.getMonth() + 1, end);
+
+    const inFrench = (date) => date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' });
+
+    return `${account.name} : ce mois-ci, pointage du ${inFrench(startDate)} au ${inFrench(endDate)}.`;
 }
 
 /**
@@ -293,8 +316,8 @@ function varianceLabel(entry) {
                 >
                     {{ periodForm.errors.period_start_day ?? periodForm.errors.period_end_day }}
                 </p>
-                <!-- La note récapitulative n'apparaît que sur la maquette desktop. -->
-                <p v-else-if="periodAccount" class="mt-2 hidden text-[13px] text-ink-muted lg:block">
+                <!-- Les jours résolus sur le calendrier réel, mis à jour en tapant. -->
+                <p v-else-if="periodAccount" class="mt-2 text-[13px] text-ink-muted lg:text-[12px]">
                     {{ periodNote(periodAccount, periodForm.period_start_day, periodForm.period_end_day) }}
                 </p>
             </section>

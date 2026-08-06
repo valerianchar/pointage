@@ -20,7 +20,10 @@ final class SendPointingReminders
         $sentCount = 0;
 
         $accounts = Account::query()
-            ->withCount(['transactions as pending_count' => fn ($query) => $query->whereNull('pointed_at')])
+            // Les opérations à venir ne sont pas encore à pointer : pas de rappel pour elles.
+            ->withCount(['transactions as pending_count' => fn ($query) => $query
+                ->whereNull('pointed_at')
+                ->where('occurred_on', '<=', $date->toDateString())])
             ->with([
                 'user.pushSubscriptions',
                 'members' => fn ($query) => $query->accepted()->with('user.pushSubscriptions'),

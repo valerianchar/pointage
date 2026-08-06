@@ -103,11 +103,13 @@ function submitRevaluation() {
     });
 }
 
-const pendingCount = computed(() => props.transactions.filter((transaction) => !transaction.is_pointed).length);
-const pointedCount = computed(() => props.transactions.length - pendingCount.value);
+/* Les opérations à venir ne sont pas encore dans le cycle : ni pointées, ni à pointer. */
+const inCycle = computed(() => props.transactions.filter((transaction) => !transaction.is_upcoming));
+const pendingCount = computed(() => inCycle.value.filter((transaction) => !transaction.is_pointed).length);
+const pointedCount = computed(() => inCycle.value.length - pendingCount.value);
 
 const pointingPercent = computed(() =>
-    props.transactions.length === 0 ? 100 : shareOf(pointedCount.value, props.transactions.length),
+    inCycle.value.length === 0 ? 100 : shareOf(pointedCount.value, inCycle.value.length),
 );
 const pointingLabel = computed(() =>
     pendingCount.value > 0 ? `${pendingCount.value} à pointer` : 'Tout est pointé',
