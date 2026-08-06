@@ -573,9 +573,18 @@ seulement s'il reste des opérations à pointer.
 **Les e-mails ne partent pas (signalements de bug).** Sans bloc `MAIL_*` dans le
 `.env` du serveur, le mailer est « log » : les messages s'écrivent dans les journaux
 du conteneur au lieu d'être envoyés. Renseignez les lignes `MAIL_*` du modèle
-[.env.production.example](.env.production.example) — n'importe quel SMTP convient,
-Brevo offre 300 e-mails/jour — puis relancez la pile. Pour vérifier depuis le
-serveur :
+[.env.production.example](.env.production.example). Par défaut elles visent le
+**Mailpit** de la pile : les messages se lisent dans son interface web, jamais
+exposée à Internet — ouvrez un tunnel depuis votre poste puis visitez
+`http://localhost:8025` :
+
+```bash
+ssh -L 8025:127.0.0.1:8025 VOTRE_HOTE
+```
+
+Pour recevoir les e-mails dans une vraie boîte, remplacez le bloc par un SMTP
+externe — Brevo offre 300 e-mails/jour. Dans les deux cas, relancez la pile après
+modification. Pour vérifier depuis le serveur :
 
 ```bash
 cd /srv/pointage && docker compose -f compose.deploy.yaml exec app php artisan tinker --execute="Illuminate\Support\Facades\Mail::raw('Test Pointage', fn (\$m) => \$m->to(config('pointage.maintainer_email'))->subject('Test SMTP'));"

@@ -59,6 +59,21 @@ services:
             mysql:
                 condition: service_healthy
 
+    # Boîte aux lettres de l'instance : l'application lui remet ses e-mails
+    # (signalements de bug) en SMTP interne, et on les lit dans son interface
+    # web. Celle-ci n'écoute qu'en boucle locale — accès par tunnel SSH :
+    #   ssh -L 8025:127.0.0.1:8025 VOTRE_HOTE  puis  http://localhost:8025
+    mailpit:
+        image: axllent/mailpit
+        restart: unless-stopped
+        environment:
+            # Sans base, les messages disparaissent à chaque redéploiement.
+            MP_DATABASE: /data/mailpit.db
+        ports:
+            - '127.0.0.1:8025:8025'
+        volumes:
+            - mailpit-data:/data
+
     mysql:
         image: mysql:8.4
         restart: unless-stopped
@@ -88,3 +103,4 @@ networks:
 volumes:
     mysql-data:
     storage:
+    mailpit-data:
