@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Actions\CreateAccount;
+use App\Actions\DeleteAccount;
 use App\Enums\AccountType;
 use App\Http\Requests\StoreAccountRequest;
 use App\Http\Resources\AccountResource;
@@ -64,6 +65,17 @@ class AccountController extends Controller
         return redirect()
             ->route('accounts.show', $account)
             ->with('success', 'Compte créé, avec ses tags par défaut.');
+    }
+
+    public function destroy(Account $account, DeleteAccount $deleteAccount): RedirectResponse
+    {
+        Gate::authorize('delete', $account);
+
+        $deleteAccount->handle($account);
+
+        return redirect()
+            ->route('dashboard')
+            ->with('success', "Compte « {$account->name} » supprimé, avec tout son historique.");
     }
 
     /**

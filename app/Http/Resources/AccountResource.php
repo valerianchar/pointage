@@ -37,6 +37,7 @@ class AccountResource extends JsonResource
                 ->startOfDay()
                 ->diffInDays($this->pointingPeriod(CarbonImmutable::now())->end, false),
             'url' => route('accounts.show', $this->id),
+            'delete_url' => route('accounts.destroy', $this->id),
             'period_url' => route('accounts.period', $this->id),
             // Résolue explicitement : une collection imbriquée non résolue se
             // sérialise enveloppée dans une clé « data » que le front n'attend pas.

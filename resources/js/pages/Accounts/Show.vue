@@ -1,6 +1,7 @@
 <script setup>
-import { computed } from 'vue';
-import { Head, Link } from '@inertiajs/vue3';
+import { computed, ref } from 'vue';
+import { Head, Link, router } from '@inertiajs/vue3';
+import { DialogContent, DialogDescription, DialogOverlay, DialogPortal, DialogRoot, DialogTitle } from 'reka-ui';
 import Amount from '../../components/Amount.vue';
 import CreditSummaryCard from '../../components/CreditSummaryCard.vue';
 import Gauge from '../../components/Gauge.vue';
@@ -19,6 +20,12 @@ const props = defineProps({
     credits: { type: Array, required: true },
     add_url: { type: String, required: true },
 });
+
+const confirmingDeletion = ref(false);
+
+function deleteAccount() {
+    router.delete(props.account.delete_url);
+}
 
 const pendingCount = computed(() => props.transactions.filter((transaction) => !transaction.is_pointed).length);
 const pointedCount = computed(() => props.transactions.length - pendingCount.value);
@@ -92,5 +99,47 @@ const pointingLabel = computed(() =>
 
         <TransactionList :transactions="props.transactions" class="mt-0.5" />
         <TransactionTable :transactions="props.transactions" class="mt-1" />
+
+        <!-- Suppression du compte : rare et irréversible, donc reléguée tout en
+             bas et protégée par une confirmation explicite. -->
+        <button
+            type="button"
+            class="mt-6 flex cursor-pointer items-center gap-1.5 text-[13px] text-ink-muted transition-colors hover:text-accent-soft lg:mt-8 lg:text-[12px]"
+            @click="confirmingDeletion = true"
+        >
+            <PhIcon name="ph-trash" class="text-[14px]" />
+            Supprimer ce compte
+        </button>
+
+        <DialogRoot :open="confirmingDeletion" @update:open="(open) => (confirmingDeletion = open)">
+            <DialogPortal>
+                <DialogOverlay class="fixed inset-0 z-80 bg-[rgba(10,11,20,0.6)]" />
+                <DialogContent
+                    class="fixed top-1/2 left-1/2 z-90 w-[calc(100vw-3rem)] max-w-[400px] -translate-x-1/2 -translate-y-1/2 rounded-card border border-hairline bg-chrome p-4 outline-none lg:p-5"
+                >
+                    <DialogTitle class="text-[16px] font-medium">Supprimer « {{ props.account.name }} » ?</DialogTitle>
+                    <DialogDescription class="mt-1.5 text-[13px] text-ink-muted lg:text-[12px]">
+                        Le compte disparaît avec tout son historique : opérations, récurrentes, tags, crédits et
+                        clôtures. Il n'y a pas de retour en arrière.
+                    </DialogDescription>
+                    <div class="mt-3.5 flex gap-2">
+                        <button
+                            type="button"
+                            class="btn-outline flex-1 py-2.5 text-[14px] lg:text-[13px]"
+                            @click="deleteAccount"
+                        >
+                            Supprimer définitivement
+                        </button>
+                        <button
+                            type="button"
+                            class="shrink-0 cursor-pointer rounded-card border border-hairline px-3.5 text-[14px] text-ink-muted transition-colors hover:border-outline-muted lg:text-[13px]"
+                            @click="confirmingDeletion = false"
+                        >
+                            Annuler
+                        </button>
+                    </div>
+                </DialogContent>
+            </DialogPortal>
+        </DialogRoot>
     </div>
 </template>

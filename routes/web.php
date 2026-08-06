@@ -54,6 +54,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/nouveau-compte', [AccountController::class, 'create'])->name('accounts.create');
         Route::post('/comptes', [AccountController::class, 'store'])->name('accounts.store');
         Route::get('/compte/{account}', [AccountController::class, 'show'])->name('accounts.show');
+        Route::delete('/compte/{account}', [AccountController::class, 'destroy'])->name('accounts.destroy');
 
         Route::get('/ajouter', [TransactionController::class, 'create'])->name('transactions.create');
         Route::post('/operations', [TransactionController::class, 'store'])->name('transactions.store');
