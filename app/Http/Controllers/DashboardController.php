@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\AccountType;
 use App\Enums\DashboardWidget;
+use App\Models\AccountDeletionRequest;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Queries\BalanceHistory;
@@ -59,8 +60,34 @@ class DashboardController extends Controller
             'widgets' => DashboardWidget::describe($enabledWidgets),
             // Invitations à des comptes joints en attente de réponse.
             'invitations' => $this->pendingInvitations($user),
+            // Demandes de suppression de comptes partagés où ce vote manque.
+            'deletion_requests' => $this->pendingDeletionRequests($user),
             ...$this->widgetData($user, $month, $totals['expense_cents'], $enabledWidgets),
         ]);
+    }
+
+    /**
+     * Demandes de suppression des comptes partagés du visiteur, où son accord
+     * manque encore.
+     *
+     * @return list<array{id: int, account_name: string, requester_name: string, approve_url: string, refuse_url: string}>
+     */
+    private function pendingDeletionRequests(User $user): array
+    {
+        return AccountDeletionRequest::query()
+            ->whereIn('account_id', $user->accessibleAccounts()->select('accounts.id'))
+            ->with(['account', 'requester'])
+            ->get()
+            ->reject(fn (AccountDeletionRequest $request): bool => $request->hasApprovalFrom($user))
+            ->map(fn (AccountDeletionRequest $request): array => [
+                'id' => $request->id,
+                'account_name' => $request->account->name,
+                'requester_name' => $request->requester->name,
+                'approve_url' => route('deletions.approve', $request->id),
+                'refuse_url' => route('deletions.refuse', $request->id),
+            ])
+            ->values()
+            ->all();
     }
 
     /**

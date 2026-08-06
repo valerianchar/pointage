@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AccountController;
+use App\Http\Controllers\AccountDeletionRequestController;
 use App\Http\Controllers\AccountMemberController;
 use App\Http\Controllers\AccountPointingPeriodController;
 use App\Http\Controllers\AccountRevaluationController;
@@ -78,6 +79,10 @@ Route::middleware('auth')->group(function () {
             ->name('members.accept');
         Route::delete('/membres/{member}', [AccountMemberController::class, 'destroy'])
             ->name('members.destroy');
+        Route::post('/suppressions/{deletionRequest}/accepter', [AccountDeletionRequestController::class, 'approve'])
+            ->name('deletions.approve');
+        Route::delete('/suppressions/{deletionRequest}', [AccountDeletionRequestController::class, 'refuse'])
+            ->name('deletions.refuse');
 
         Route::get('/ajouter', [TransactionController::class, 'create'])->name('transactions.create');
         Route::post('/operations', [TransactionController::class, 'store'])->name('transactions.store');

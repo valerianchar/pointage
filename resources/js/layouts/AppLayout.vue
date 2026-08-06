@@ -1,10 +1,18 @@
 <script setup>
+import { onMounted } from 'vue';
+import { usePage } from '@inertiajs/vue3';
 import AppSidebar from '../components/AppSidebar.vue';
 import AppTabBar from '../components/AppTabBar.vue';
 import BugReportDialog from '../components/BugReportDialog.vue';
 import FlashToast from '../components/FlashToast.vue';
 import MustPointDialog from '../components/MustPointDialog.vue';
 import PointingDueBanner from '../components/PointingDueBanner.vue';
+import { connectRealtime } from '../realtime';
+
+const page = usePage();
+
+/* Les écrans authentifiés s'abonnent au canal privé de l'utilisateur. */
+onMounted(() => connectRealtime(page.props.broadcast));
 </script>
 
 <template>

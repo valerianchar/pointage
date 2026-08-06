@@ -34,6 +34,8 @@ const props = defineProps({
     pea_totals: { type: Object, default: null },
     /** @type {{id: number, account_name: string, inviter_name: string, accept_url: string, decline_url: string}[]} */
     invitations: { type: Array, default: () => [] },
+    /** @type {{id: number, account_name: string, requester_name: string, approve_url: string, refuse_url: string}[]} */
+    deletion_requests: { type: Array, default: () => [] },
 });
 
 const page = usePage();
@@ -176,6 +178,35 @@ const { open: openBugReport } = useBugReport();
                     type="button"
                     class="cursor-pointer rounded-card border border-hairline px-3 py-1.5 text-[13px] text-ink-muted transition-colors hover:border-outline-muted lg:text-[12px]"
                     @click="router.delete(invitation.decline_url)"
+                >
+                    Refuser
+                </button>
+            </div>
+        </div>
+
+        <!-- Suppressions de comptes partagés : chaque membre a voix au chapitre. -->
+        <div
+            v-for="request in props.deletion_requests"
+            :key="`suppression-${request.id}`"
+            class="mt-3 flex flex-wrap items-center gap-2.5 rounded-card border border-ink-muted bg-surface p-3"
+        >
+            <PhIcon name="ph-trash" class="text-[18px] text-ink-muted" />
+            <p class="min-w-0 flex-1 text-[13px]">
+                <span class="font-medium">{{ request.requester_name }}</span> demande la suppression de
+                « {{ request.account_name }} » — d'accord ?
+            </p>
+            <div class="flex shrink-0 gap-2">
+                <button
+                    type="button"
+                    class="btn-outline px-3 py-1.5 text-[13px] lg:text-[12px]"
+                    @click="router.post(request.approve_url)"
+                >
+                    Supprimer
+                </button>
+                <button
+                    type="button"
+                    class="cursor-pointer rounded-card border border-hairline px-3 py-1.5 text-[13px] text-ink-muted transition-colors hover:border-outline-muted lg:text-[12px]"
+                    @click="router.delete(request.refuse_url)"
                 >
                     Refuser
                 </button>

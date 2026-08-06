@@ -26,6 +26,8 @@ const props = defineProps({
     members: { type: Array, default: () => [] },
     can_invite: { type: Boolean, default: false },
     invite_url: { type: String, default: '' },
+    /** @type {{requester_name: string, is_requester: boolean, i_approved: boolean, approvals_count: number, voters_count: number, approve_url: string, refuse_url: string}|null} */
+    deletion_request: { type: Object, default: null },
 });
 
 /* Comptes à positions — crypto, PEA : le compte suit la valeur du portefeuille. */
@@ -54,7 +56,10 @@ function syncPositions() {
 const confirmingDeletion = ref(false);
 
 function deleteAccount() {
-    router.delete(props.account.delete_url);
+    router.delete(props.account.delete_url, {
+        // Compte partagé : la demande part et la fiche reste — le dialogue se referme.
+        onSuccess: () => (confirmingDeletion.value = false),
+    });
 }
 
 /* Compte joint : le propriétaire invite par e-mail exact, chacun peut se retirer. */
@@ -68,6 +73,9 @@ const inviteForm = useForm({ email: '' });
  */
 const pendingMembers = computed(() => props.members.filter((member) => member.status === 'pending'));
 const awaitingMembers = computed(() => props.account.type === 'joint' && pendingMembers.value.length > 0);
+
+/* Compte partagé : supprimer devient une demande, chaque membre devant accepter. */
+const hasOtherMembers = computed(() => props.members.some((member) => member.status === 'member'));
 
 const MEMBER_STATUS = {
     owner: 'Propriétaire',
@@ -133,6 +141,36 @@ const pointingLabel = computed(() =>
         </div>
 
         <p class="mt-3 text-[28px] font-medium lg:hidden"><Amount :cents="props.account.balance_cents" /></p>
+
+        <!-- Suppression demandée : chaque membre tranche, l'unanimité emporte le compte. -->
+        <div v-if="props.deletion_request" class="mt-3 rounded-card border border-ink-muted bg-surface p-4 lg:mt-5">
+            <p class="flex items-center gap-2 text-[15px] font-medium lg:text-[14px]">
+                <PhIcon name="ph-trash" class="text-[18px] text-ink-muted" />
+                Suppression demandée par {{ props.deletion_request.requester_name }}
+            </p>
+            <p class="mt-1.5 text-[13px] text-ink-muted lg:text-[12px]">
+                {{ props.deletion_request.approvals_count }} accord{{ props.deletion_request.approvals_count > 1 ? 's' : '' }}
+                sur {{ props.deletion_request.voters_count }} — le compte disparaîtra, avec tout son
+                historique, quand chaque membre aura accepté. Un seul refus l'annule.
+            </p>
+            <div class="mt-3 flex gap-2">
+                <button
+                    v-if="!props.deletion_request.i_approved"
+                    type="button"
+                    class="btn-outline px-3 py-1.5 text-[13px] lg:text-[12px]"
+                    @click="router.post(props.deletion_request.approve_url)"
+                >
+                    Supprimer
+                </button>
+                <button
+                    type="button"
+                    class="cursor-pointer rounded-card border border-hairline px-3 py-1.5 text-[13px] text-ink-muted transition-colors hover:border-outline-muted lg:text-[12px]"
+                    @click="router.delete(props.deletion_request.refuse_url)"
+                >
+                    {{ props.deletion_request.is_requester ? 'Annuler ma demande' : 'Refuser' }}
+                </button>
+            </div>
+        </div>
 
         <!-- Salle d'attente du compte joint : tout le monde n'a pas encore répondu. -->
         <div v-if="awaitingMembers" class="mt-3 rounded-card border border-accent bg-surface p-4 lg:mt-5">
@@ -437,8 +475,15 @@ const pointingLabel = computed(() =>
                 >
                     <DialogTitle class="text-[16px] font-medium">Supprimer « {{ props.account.name }} » ?</DialogTitle>
                     <DialogDescription class="mt-1.5 text-[13px] text-ink-muted lg:text-[12px]">
-                        Le compte disparaît avec tout son historique : opérations, récurrentes, tags, crédits et
-                        clôtures. Il n'y a pas de retour en arrière.
+                        <template v-if="hasOtherMembers">
+                            Ce compte est partagé : votre demande sera envoyée aux autres membres, et le compte —
+                            avec tout son historique — ne disparaîtra que lorsque chacun aura accepté. Un seul
+                            refus l'annule.
+                        </template>
+                        <template v-else>
+                            Le compte disparaît avec tout son historique : opérations, récurrentes, tags, crédits et
+                            clôtures. Il n'y a pas de retour en arrière.
+                        </template>
                     </DialogDescription>
                     <div class="mt-3.5 flex gap-2">
                         <button
@@ -446,7 +491,7 @@ const pointingLabel = computed(() =>
                             class="btn-outline flex-1 py-2.5 text-[14px] lg:text-[13px]"
                             @click="deleteAccount"
                         >
-                            Supprimer définitivement
+                            {{ hasOtherMembers ? 'Demander la suppression' : 'Supprimer définitivement' }}
                         </button>
                         <button
                             type="button"

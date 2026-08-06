@@ -18,6 +18,8 @@ final class DeleteAccount
     public function handle(Account $account): void
     {
         DB::transaction(function () use ($account): void {
+            $account->deletionRequest?->approvals()->delete();
+            $account->deletionRequest?->delete();
             $account->closings()->delete();
             $account->credits()->delete();
             $account->positions()->delete();

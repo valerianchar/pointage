@@ -18,12 +18,12 @@ class AccountPolicy
     }
 
     /**
-     * Supprimer le compte ou gérer ses membres reste au propriétaire : un
-     * membre partage les opérations, pas les clés.
+     * Chaque membre peut engager la suppression — mais sur un compte partagé,
+     * elle n'aboutit qu'avec l'accord de tous les autres.
      */
     public function delete(User $user, Account $account): bool
     {
-        return $account->user_id === $user->id;
+        return $account->isAccessibleBy($user);
     }
 
     public function manageMembers(User $user, Account $account): bool

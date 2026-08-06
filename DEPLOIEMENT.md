@@ -598,6 +598,17 @@ renseignez `MAILPIT_DOMAIN` et `MAILPIT_BASIC_AUTH` dans le `.env` (le modèle
 explique comment générer le mot de passe haché), puis relancez la pile. Traefik
 obtient le certificat au premier accès ; l'interface demande alors le mot de passe.
 
+### Temps réel des comptes partagés
+
+La pile embarque **Soketi**, un serveur websocket qui parle le protocole Pusher
+sans rien envoyer chez pusher.com : une dépense saisie sur un compte joint, une
+demande de suppression — l'écran des autres membres se met à jour tout seul.
+Renseignez les trois secrets `PUSHER_*` du `.env` (trois chaînes aléatoires,
+voir le modèle) et relancez la pile. Le navigateur se connecte en wss sur le
+domaine de l'application — le protocole vit sous `/app/…`, Traefik y aiguille —
+donc aucun nouveau sous-domaine à déclarer. Secrets absents : l'application
+fonctionne à l'identique, sans temps réel.
+
 Pour recevoir les e-mails dans une vraie boîte, remplacez le bloc par un SMTP
 externe — Brevo offre 300 e-mails/jour. Dans les deux cas, relancez la pile après
 modification. Pour vérifier depuis le serveur :

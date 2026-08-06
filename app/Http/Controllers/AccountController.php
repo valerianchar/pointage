@@ -3,8 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Actions\CreateAccount;
-use App\Actions\DeleteAccount;
 use App\Actions\EnsureAssetPrices;
+use App\Actions\RequestAccountDeletion;
 use App\Enums\AccountType;
 use App\Http\Requests\StoreAccountRequest;
 use App\Http\Resources\AccountResource;
@@ -57,7 +57,32 @@ class AccountController extends Controller
             'members' => $this->membersOf($account, $request->user()),
             'can_invite' => $request->user()->can('manageMembers', $account),
             'invite_url' => route('members.store', $account->id),
+            'deletion_request' => $this->deletionRequestOf($account, $request->user()),
         ]);
+    }
+
+    /**
+     * Demande de suppression en cours sur ce compte, vue par le visiteur.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function deletionRequestOf(Account $account, User $viewer): ?array
+    {
+        $deletionRequest = $account->deletionRequest()->with('requester')->first();
+
+        if ($deletionRequest === null) {
+            return null;
+        }
+
+        return [
+            'requester_name' => $deletionRequest->requester->name,
+            'is_requester' => $deletionRequest->requested_by === $viewer->id,
+            'i_approved' => $deletionRequest->hasApprovalFrom($viewer),
+            'approvals_count' => $deletionRequest->approvals()->count(),
+            'voters_count' => $deletionRequest->voters()->count(),
+            'approve_url' => route('deletions.approve', $deletionRequest->id),
+            'refuse_url' => route('deletions.refuse', $deletionRequest->id),
+        ];
     }
 
     /**
@@ -203,11 +228,17 @@ class AccountController extends Controller
         );
     }
 
-    public function destroy(Account $account, DeleteAccount $deleteAccount): RedirectResponse
+    public function destroy(Request $request, Account $account, RequestAccountDeletion $requestAccountDeletion): RedirectResponse
     {
         Gate::authorize('delete', $account);
 
-        $deleteAccount->handle($account);
+        /*
+         * Compte partagé : la suppression devient une demande, chaque autre
+         * membre devant donner son accord. Compte à soi : suppression directe.
+         */
+        if ($requestAccountDeletion->handle($account, $request->user()) !== null) {
+            return back()->with('success', 'Demande envoyée aux autres membres — le compte sera supprimé quand chacun aura accepté.');
+        }
 
         return redirect()
             ->route('dashboard')

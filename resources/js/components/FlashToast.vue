@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch } from 'vue';
+import { onMounted, onUnmounted, ref, watch } from 'vue';
 import { usePage } from '@inertiajs/vue3';
 import { ToastProvider, ToastRoot, ToastTitle, ToastViewport } from 'reka-ui';
 
@@ -32,6 +32,12 @@ watch(
     },
     { immediate: true },
 );
+
+/* Le temps réel (realtime.js) pousse ses messages par un événement DOM. */
+const onRealtimeToast = (event) => show(event.detail.message, event.detail.error);
+
+onMounted(() => document.addEventListener('pointage:toast', onRealtimeToast));
+onUnmounted(() => document.removeEventListener('pointage:toast', onRealtimeToast));
 
 /*
  * Un formulaire incomplet répond par des erreurs de validation, affichées sous

@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 #[Fillable(['name', 'type', 'initial_balance_cents', 'period_start_day', 'period_end_day'])]
 class Account extends Model
@@ -78,6 +79,12 @@ class Account extends Model
     public function members(): HasMany
     {
         return $this->hasMany(AccountMember::class);
+    }
+
+    /** @return HasOne<AccountDeletionRequest, $this> */
+    public function deletionRequest(): HasOne
+    {
+        return $this->hasOne(AccountDeletionRequest::class);
     }
 
     /**
