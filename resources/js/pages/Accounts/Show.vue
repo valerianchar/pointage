@@ -13,6 +13,8 @@ import { shareOf } from '../../money';
 import { routes } from '../../routes';
 
 const props = defineProps({
+    /** @type {{id: number, asset_id: string, label: string, quantity: string, price_cents: number|null, value_cents: number|null, price_date_label: string|null, delete_url: string}[]} */
+    positions: { type: Array, default: () => [] },
     account: { type: Object, required: true },
     month_label: { type: String, required: true },
     transactions: { type: Array, required: true },
@@ -20,6 +22,29 @@ const props = defineProps({
     credits: { type: Array, required: true },
     add_url: { type: String, required: true },
 });
+
+/* Positions crypto : le compte suit la valeur du portefeuille, cours CoinGecko. */
+const showPositions = computed(() => props.account.type === 'crypto' || props.positions.length > 0);
+const addingPosition = ref(false);
+const positionForm = useForm({ asset_id: '', quantity: '' });
+
+function submitPosition() {
+    positionForm.post(`${props.account.url}/positions`, {
+        preserveScroll: true,
+        onSuccess: () => {
+            positionForm.reset();
+            addingPosition.value = false;
+        },
+    });
+}
+
+function deletePosition(position) {
+    router.delete(position.delete_url, { preserveScroll: true });
+}
+
+function syncPositions() {
+    router.post(`${props.account.url}/positions/synchroniser`, {}, { preserveScroll: true });
+}
 
 const confirmingDeletion = ref(false);
 
@@ -102,6 +127,113 @@ const pointingLabel = computed(() =>
                 <TagSpendingBars :spending="props.tag_spending" />
             </div>
         </div>
+
+        <template v-if="showPositions">
+            <div class="mt-4 flex items-baseline justify-between lg:mt-[22px]">
+                <p class="label-caps">Positions</p>
+                <button
+                    v-if="props.positions.length > 0"
+                    type="button"
+                    class="cursor-pointer text-[13px] text-accent-soft transition-colors hover:text-ink lg:text-[12px]"
+                    @click="syncPositions"
+                >
+                    Synchroniser maintenant
+                </button>
+            </div>
+
+            <div v-if="props.positions.length > 0" class="mt-1.5 flex flex-col gap-[7px] lg:gap-2">
+                <div
+                    v-for="position in props.positions"
+                    :key="position.id"
+                    class="flex items-center gap-2.5 rounded-card bg-surface px-3 py-2.5 lg:gap-3 lg:px-4 lg:py-3"
+                >
+                    <div class="min-w-0 flex-1">
+                        <p class="text-[15px] font-medium lg:text-[13px]">{{ position.label }}</p>
+                        <p class="mt-px text-[12px] text-ink-muted lg:text-[11px]">
+                            {{ position.quantity }} ×
+                            <Amount v-if="position.price_cents !== null" :cents="position.price_cents" />
+                            <span v-else>cours inconnu</span>
+                            <span v-if="position.price_date_label"> · cours du {{ position.price_date_label }}</span>
+                        </p>
+                    </div>
+                    <Amount
+                        v-if="position.value_cents !== null"
+                        :cents="position.value_cents"
+                        class="shrink-0 text-[15px] lg:text-[14px]"
+                    />
+                    <button
+                        type="button"
+                        class="shrink-0 cursor-pointer text-[14px] text-ink-muted transition-colors hover:text-accent-soft"
+                        :aria-label="`Supprimer la position ${position.label}`"
+                        @click="deletePosition(position)"
+                    >
+                        <PhIcon name="ph-x" />
+                    </button>
+                </div>
+            </div>
+
+            <p v-else class="mt-1.5 text-[13px] text-ink-muted lg:text-[12px]">
+                Déclarez vos avoirs (« bitcoin », « ethereum »…) : le compte suivra leur valeur chaque nuit,
+                sans rien à pointer.
+            </p>
+
+            <button
+                v-if="!addingPosition"
+                type="button"
+                class="mt-2 cursor-pointer text-[13px] text-accent-soft transition-colors hover:text-ink lg:text-[12px]"
+                @click="addingPosition = true"
+            >
+                + Déclarer une position
+            </button>
+            <form v-else class="mt-2 rounded-card bg-surface p-3" @submit.prevent="submitPosition">
+                <div class="flex gap-1.5 lg:gap-2">
+                    <input
+                        v-model="positionForm.asset_id"
+                        type="text"
+                        class="field min-w-0 flex-1 bg-page!"
+                        placeholder="Identifiant CoinGecko — ex. bitcoin"
+                        list="assets-connus"
+                        aria-label="Identifiant CoinGecko"
+                    />
+                    <datalist id="assets-connus">
+                        <option value="bitcoin" />
+                        <option value="ethereum" />
+                        <option value="solana" />
+                        <option value="ripple" />
+                        <option value="cardano" />
+                        <option value="dogecoin" />
+                        <option value="polkadot" />
+                        <option value="chainlink" />
+                        <option value="litecoin" />
+                    </datalist>
+                    <input
+                        v-model="positionForm.quantity"
+                        type="text"
+                        inputmode="decimal"
+                        class="field w-[110px] shrink-0 bg-page!"
+                        placeholder="Quantité"
+                        aria-label="Quantité"
+                    />
+                    <button
+                        type="submit"
+                        class="btn-outline shrink-0 px-3 text-[14px] lg:text-[13px]"
+                        :disabled="positionForm.processing"
+                    >
+                        OK
+                    </button>
+                </div>
+                <p v-if="positionForm.errors.asset_id" class="mt-1.5 text-[13px] text-accent-soft">
+                    {{ positionForm.errors.asset_id }}
+                </p>
+                <p v-if="positionForm.errors.quantity" class="mt-1.5 text-[13px] text-accent-soft">
+                    {{ positionForm.errors.quantity }}
+                </p>
+            </form>
+            <p class="mt-1.5 text-[11px] text-ink-faint lg:text-[10px]">
+                Cours fournis par CoinGecko, rafraîchis chaque nuit à 5 h 30 — le solde du compte est recalé
+                sur la valeur totale des positions.
+            </p>
+        </template>
 
         <template v-if="props.credits.length > 0">
             <p class="label-caps mt-4 mb-1.5 lg:mt-[22px] lg:mb-2">Crédits sur ce compte</p>

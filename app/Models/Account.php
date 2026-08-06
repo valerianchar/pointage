@@ -62,6 +62,12 @@ class Account extends Model
         return $this->hasMany(Credit::class);
     }
 
+    /** @return HasMany<Position, $this> */
+    public function positions(): HasMany
+    {
+        return $this->hasMany(Position::class);
+    }
+
     /** @return HasMany<AccountClosing, $this> */
     public function closings(): HasMany
     {

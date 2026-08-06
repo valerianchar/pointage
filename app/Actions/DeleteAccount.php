@@ -20,6 +20,7 @@ final class DeleteAccount
         DB::transaction(function () use ($account): void {
             $account->closings()->delete();
             $account->credits()->delete();
+            $account->positions()->delete();
             $account->transactions()->delete();
             $account->recurringTransactions()->delete();
             $account->tags()->delete();

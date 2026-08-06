@@ -10,6 +10,8 @@ use App\Http\Resources\AccountResource;
 use App\Http\Resources\CreditResource;
 use App\Http\Resources\TransactionResource;
 use App\Models\Account;
+use App\Models\AssetPrice;
+use App\Models\Position;
 use App\Models\Transaction;
 use App\Queries\TagSpending;
 use Carbon\CarbonImmutable;
@@ -42,6 +44,7 @@ class AccountController extends Controller
             'transactions' => TransactionResource::collection($transactions)->resolve(),
             'tag_spending' => $this->tagSpending->forAccountMonth($account, $month),
             'credits' => CreditResource::collection($account->credits()->orderBy('id')->get())->resolve(),
+            'positions' => $this->positionsWithPrices($account),
             'add_url' => route('transactions.create', ['compte' => $account->id]),
         ]);
     }
@@ -76,6 +79,40 @@ class AccountController extends Controller
         return redirect()
             ->route('dashboard')
             ->with('success', "Compte « {$account->name} » supprimé, avec tout son historique.");
+    }
+
+    /**
+     * Positions du compte avec leur dernier cours connu et sa fraîcheur.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function positionsWithPrices(Account $account): array
+    {
+        $positions = $account->positions()->orderBy('id')->get();
+
+        if ($positions->isEmpty()) {
+            return [];
+        }
+
+        $prices = AssetPrice::query()
+            ->whereIn('asset_id', $positions->pluck('asset_id'))
+            ->get()
+            ->keyBy('asset_id');
+
+        return $positions->map(function (Position $position) use ($prices): array {
+            $price = $prices->get($position->asset_id);
+
+            return [
+                'id' => $position->id,
+                'asset_id' => $position->asset_id,
+                'label' => $position->label,
+                'quantity' => rtrim(rtrim($position->quantity, '0'), '.'),
+                'price_cents' => $price === null ? null : (int) round((float) $price->price_eur * 100),
+                'value_cents' => $position->valueCents($price),
+                'price_date_label' => $price?->fetched_at->translatedFormat('j M, H:i'),
+                'delete_url' => route('positions.destroy', $position->id),
+            ];
+        })->all();
     }
 
     /**

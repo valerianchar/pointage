@@ -11,6 +11,7 @@ use App\Http\Controllers\ClosingController;
 use App\Http\Controllers\CreditController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DashboardWidgetController;
+use App\Http\Controllers\PositionController;
 use App\Http\Controllers\PrivacyController;
 use App\Http\Controllers\PushSubscriptionController;
 use App\Http\Controllers\RecurringTransactionController;
@@ -58,6 +59,13 @@ Route::middleware('auth')->group(function () {
         Route::delete('/compte/{account}', [AccountController::class, 'destroy'])->name('accounts.destroy');
         Route::post('/compte/{account}/reevaluation', [AccountRevaluationController::class, 'store'])
             ->name('accounts.revalue');
+        Route::post('/compte/{account}/positions', [PositionController::class, 'store'])
+            ->name('positions.store');
+        Route::post('/compte/{account}/positions/synchroniser', [PositionController::class, 'sync'])
+            ->middleware('throttle:10,1')
+            ->name('positions.sync');
+        Route::delete('/positions/{position}', [PositionController::class, 'destroy'])
+            ->name('positions.destroy');
 
         Route::get('/ajouter', [TransactionController::class, 'create'])->name('transactions.create');
         Route::post('/operations', [TransactionController::class, 'store'])->name('transactions.store');
