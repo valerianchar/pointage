@@ -61,16 +61,29 @@ services:
 
     # Boîte aux lettres de l'instance : l'application lui remet ses e-mails
     # (signalements de bug) en SMTP interne, et on les lit dans son interface
-    # web. Celle-ci n'écoute qu'en boucle locale — accès par tunnel SSH :
+    # web. Deux accès : le tunnel SSH (toujours disponible) —
     #   ssh -L 8025:127.0.0.1:8025 VOTRE_HOTE  puis  http://localhost:8025
+    # — ou le sous-domaine MAILPIT_DOMAIN via Traefik, en HTTPS et protégé par
+    # le mot de passe haché de MAILPIT_BASIC_AUTH (voir .env.production.example).
     mailpit:
         image: axllent/mailpit
         restart: unless-stopped
         environment:
             # Sans base, les messages disparaissent à chaque redéploiement.
             MP_DATABASE: /data/mailpit.db
+        labels:
+            traefik.enable: 'true'
+            traefik.http.routers.mailpit.rule: 'Host(`${MAILPIT_DOMAIN:-mailpit.localhost}`)'
+            traefik.http.routers.mailpit.entrypoints: 'websecure'
+            traefik.http.routers.mailpit.tls.certresolver: 'le'
+            traefik.http.routers.mailpit.middlewares: 'mailpit-auth'
+            traefik.http.middlewares.mailpit-auth.basicauth.users: '${MAILPIT_BASIC_AUTH:-}'
+            traefik.http.services.mailpit.loadbalancer.server.port: '8025'
         ports:
             - '127.0.0.1:8025:8025'
+        networks:
+            - default
+            - proxy
         volumes:
             - mailpit-data:/data
 

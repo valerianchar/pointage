@@ -574,13 +574,18 @@ seulement s'il reste des opérations à pointer.
 `.env` du serveur, le mailer est « log » : les messages s'écrivent dans les journaux
 du conteneur au lieu d'être envoyés. Renseignez les lignes `MAIL_*` du modèle
 [.env.production.example](.env.production.example). Par défaut elles visent le
-**Mailpit** de la pile : les messages se lisent dans son interface web, jamais
-exposée à Internet — ouvrez un tunnel depuis votre poste puis visitez
-`http://localhost:8025` :
+**Mailpit** de la pile : les messages se lisent dans son interface web — par tunnel
+SSH depuis votre poste (`http://localhost:8025`) :
 
 ```bash
 ssh -L 8025:127.0.0.1:8025 VOTRE_HOTE
 ```
+
+ou, pour y accéder de partout, sur un sous-domaine servi par Traefik : créez un
+enregistrement DNS A (par exemple `mailpit.votre-domaine`) vers l'IP du serveur,
+renseignez `MAILPIT_DOMAIN` et `MAILPIT_BASIC_AUTH` dans le `.env` (le modèle
+explique comment générer le mot de passe haché), puis relancez la pile. Traefik
+obtient le certificat au premier accès ; l'interface demande alors le mot de passe.
 
 Pour recevoir les e-mails dans une vraie boîte, remplacez le bloc par un SMTP
 externe — Brevo offre 300 e-mails/jour. Dans les deux cas, relancez la pile après
