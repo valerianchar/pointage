@@ -43,17 +43,20 @@ class TransactionController extends Controller
 
         $tag = $request->filled('tag_id') ? Tag::find($request->integer('tag_id')) : null;
 
-        $recordTransaction->handle(
+        $transaction = $recordTransaction->handle(
             $account,
             $request->string('label')->trim()->value(),
             $request->signedAmountCents(),
             $tag,
             $request->boolean('is_recurring'),
             CarbonImmutable::now(),
+            $request->filled('recurring_day') ? $request->integer('recurring_day') : null,
         );
 
         return redirect()
             ->route('accounts.show', $account)
-            ->with('success', 'Opération ajoutée, en attente de pointage.');
+            ->with('success', $transaction === null
+                ? 'Récurrente programmée : elle apparaîtra le jour choisi.'
+                : 'Opération ajoutée, en attente de pointage.');
     }
 }

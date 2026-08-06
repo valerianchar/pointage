@@ -1,4 +1,4 @@
-# Génère les opérations récurrentes du mois sur une instance hébergée sans cron.
+# Génère les opérations récurrentes arrivées à échéance sur une instance sans cron.
 #
 # Deux secrets à créer dans le dépôt (Settings → Secrets and variables → Actions) :
 #   POINTAGE_URL    l'adresse publique, par exemple https://pointage.onrender.com
@@ -11,8 +11,8 @@ name: Opérations récurrentes
 
 on:
     schedule:
-        # Le 1er de chaque mois à 00 h 05 UTC.
-        - cron: '5 0 1 * *'
+        # Chaque jour à 00 h 05 UTC : chaque récurrente apparaît à sa date.
+        - cron: '5 0 * * *'
     workflow_dispatch:
 
 jobs:

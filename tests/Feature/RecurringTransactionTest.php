@@ -96,9 +96,31 @@ class RecurringTransactionTest extends TestCase
         $account = Account::factory()->create();
         RecurringTransaction::factory()->for($account)->onDay(31)->create();
 
-        (new GenerateRecurringTransactions)->handle(CarbonImmutable::parse('2026-02-10'));
+        (new GenerateRecurringTransactions)->handle(CarbonImmutable::parse('2026-02-28'));
 
         $this->assertSame('2026-02-28', $account->transactions()->sole()->occurred_on->toDateString());
+    }
+
+    public function test_an_instance_only_appears_once_its_day_has_arrived(): void
+    {
+        $account = Account::factory()->create();
+        RecurringTransaction::factory()->for($account)->onDay(15)->create();
+
+        $generate = new GenerateRecurringTransactions;
+
+        $this->assertSame(0, $generate->handle(CarbonImmutable::parse('2026-09-14')));
+        $this->assertSame(1, $generate->handle(CarbonImmutable::parse('2026-09-15')));
+        $this->assertSame('2026-09-15', $account->transactions()->sole()->occurred_on->toDateString());
+    }
+
+    public function test_a_missed_day_is_caught_up_by_the_next_run(): void
+    {
+        $account = Account::factory()->create();
+        RecurringTransaction::factory()->for($account)->onDay(3)->create();
+
+        // Le planificateur n'a pas tourné du 3 au 7 : le passage du 8 rattrape.
+        $this->assertSame(1, (new GenerateRecurringTransactions)->handle(CarbonImmutable::parse('2026-09-08')));
+        $this->assertSame('2026-09-03', $account->transactions()->sole()->occurred_on->toDateString());
     }
 
     public function test_generated_instances_change_the_balance(): void

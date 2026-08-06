@@ -29,6 +29,8 @@ class StoreTransactionRequest extends FormRequest
                 Rule::exists('tags', 'id')->where('account_id', $this->integer('account_id')),
             ],
             'is_recurring' => ['boolean'],
+            // Jour de chaque mois où la récurrente doit se produire.
+            'recurring_day' => ['nullable', 'integer', 'min:1', 'max:31'],
         ];
     }
 
@@ -43,6 +45,9 @@ class StoreTransactionRequest extends FormRequest
             'label.required' => 'Donnez un libellé à cette opération.',
             'amount.required' => 'Saisissez un montant.',
             'tag_id.exists' => 'Ce tag n’appartient pas à ce compte.',
+            'recurring_day.min' => 'Le jour va du 1 au 31.',
+            'recurring_day.max' => 'Le jour va du 1 au 31.',
+            'recurring_day.integer' => 'Le jour va du 1 au 31.',
         ];
     }
 

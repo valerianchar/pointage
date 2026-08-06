@@ -22,6 +22,7 @@ const form = useForm({
     label: '',
     tag_id: null,
     is_recurring: false,
+    recurring_day: new Date().getDate(),
 });
 
 const selectedAccount = computed(() => props.accounts.find((account) => account.id === form.account_id) ?? null);
@@ -47,7 +48,7 @@ function submit() {
     <div class="max-w-[540px]">
         <h1 class="text-xl lg:text-[22px]">Ajouter une opération</h1>
 
-        <p v-if="props.accounts.length === 0" class="mt-3 text-[13px] text-ink-muted">
+        <p v-if="props.accounts.length === 0" class="mt-3 text-[15px] text-ink-muted">
             Déclarez d'abord un compte :
             <Link :href="routes.accountCreate" class="text-accent-soft">déclarer un compte</Link>.
         </p>
@@ -61,7 +62,7 @@ function submit() {
                         v-model="form.amount"
                         type="text"
                         inputmode="decimal"
-                        class="field text-[15px]"
+                        class="field"
                         placeholder="0,00 €"
                     />
                 </FormField>
@@ -82,7 +83,7 @@ function submit() {
                     {{ account.name }}
                 </Chip>
             </div>
-            <p v-if="form.errors.account_id" class="mt-1.5 text-[11px] text-accent-soft">
+            <p v-if="form.errors.account_id" class="mt-1.5 text-[13px] text-accent-soft">
                 {{ form.errors.account_id }}
             </p>
 
@@ -97,20 +98,45 @@ function submit() {
                     {{ tag.name }}
                 </Chip>
             </div>
-            <p v-else class="text-[11px] text-ink-muted">
+            <p v-else class="text-[13px] text-ink-muted">
                 Ce compte n'a plus de tag.
                 <Link :href="routes.tagsFor(form.account_id)" class="text-accent-soft">En ajouter un</Link>.
             </p>
 
             <div class="mt-4 flex items-center justify-between lg:mt-5">
                 <div>
-                    <p class="text-[13px]">Récurrente</p>
-                    <p class="text-[10px] text-ink-muted lg:text-[11px]">Recréée automatiquement chaque mois</p>
+                    <p class="text-[15px]">Récurrente</p>
+                    <p class="text-[12px] text-ink-muted lg:text-[11px]">Recréée automatiquement chaque mois</p>
                 </div>
                 <RecurringSwitch v-model="form.is_recurring" label="Opération récurrente" />
             </div>
 
-            <button type="submit" class="btn-outline mt-4 w-full py-2.5 text-[13px] lg:mt-5" :disabled="form.processing">
+            <!-- Le jour n'a de sens que pour une récurrente : il apparaît avec elle. -->
+            <div v-if="form.is_recurring" class="mt-3 flex items-center justify-between lg:mt-3.5">
+                <div>
+                    <p class="text-[15px]">Prélevée le</p>
+                    <p class="text-[12px] text-ink-muted lg:text-[11px]">
+                        L'opération se crée ce jour-là, chaque mois
+                    </p>
+                </div>
+                <div class="flex shrink-0 items-center gap-2">
+                    <input
+                        v-model.number="form.recurring_day"
+                        type="number"
+                        inputmode="numeric"
+                        min="1"
+                        max="31"
+                        class="field w-[64px] px-0 py-1.5 text-center"
+                        aria-label="Jour du mois"
+                    />
+                    <span class="text-[13px] whitespace-nowrap text-ink-muted">du mois</span>
+                </div>
+            </div>
+            <p v-if="form.errors.recurring_day" class="mt-1.5 text-[13px] text-accent-soft">
+                {{ form.errors.recurring_day }}
+            </p>
+
+            <button type="submit" class="btn-outline mt-4 w-full py-2.5 text-[15px] lg:mt-5" :disabled="form.processing">
                 {{ submitLabel }}
             </button>
         </form>

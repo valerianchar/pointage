@@ -10,10 +10,10 @@ use Illuminate\Http\Request;
 class ScheduledTaskController extends Controller
 {
     /**
-     * Génère les opérations récurrentes du mois sur appel HTTP.
+     * Génère les opérations récurrentes arrivées à échéance sur appel HTTP.
      *
      * Prévu pour un hébergeur sans cron : un service de cron externe appelle cette
-     * route une fois par mois. L'action est idempotente, donc un appel de trop, un
+     * route une fois par jour. L'action est idempotente, donc un appel de trop, un
      * réessai ou un rejeu ne crée aucun doublon.
      */
     public function __invoke(Request $request, GenerateRecurringTransactions $generateRecurringTransactions): JsonResponse

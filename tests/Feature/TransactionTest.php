@@ -107,7 +107,51 @@ class TransactionTest extends TestCase
         $this->assertSame(-1_099, $template->amount_cents);
         $this->assertSame('Spotify', $template->label);
         $this->assertTrue($template->is_active);
+        $this->assertSame(now()->day, $template->day_of_month);
         $this->assertSame($template->id, $transaction->recurring_transaction_id);
+    }
+
+    public function test_a_recurring_operation_set_on_a_past_day_is_created_at_that_date(): void
+    {
+        $this->travelTo('2026-08-20');
+        $user = User::factory()->create();
+        $account = Account::factory()->for($user)->create();
+
+        $this->actingAs($user)
+            ->post('/operations', [
+                'account_id' => $account->id,
+                'direction' => TransactionDirection::Expense->value,
+                'amount' => '820',
+                'label' => 'Loyer',
+                'is_recurring' => true,
+                'recurring_day' => 5,
+            ])
+            ->assertRedirect();
+
+        $this->assertSame(5, $account->recurringTransactions()->sole()->day_of_month);
+        $this->assertSame('2026-08-05', $account->transactions()->sole()->occurred_on->toDateString());
+    }
+
+    public function test_a_recurring_operation_set_on_a_future_day_waits_for_it(): void
+    {
+        $this->travelTo('2026-08-20');
+        $user = User::factory()->create();
+        $account = Account::factory()->for($user)->create();
+
+        $this->actingAs($user)
+            ->post('/operations', [
+                'account_id' => $account->id,
+                'direction' => TransactionDirection::Expense->value,
+                'amount' => '73,40',
+                'label' => 'EDF',
+                'is_recurring' => true,
+                'recurring_day' => 27,
+            ])
+            ->assertRedirect();
+
+        // Le modèle existe, mais aucune opération avant le jour dit.
+        $this->assertSame(27, $account->recurringTransactions()->sole()->day_of_month);
+        $this->assertSame(0, $account->transactions()->count());
     }
 
     public function test_a_one_off_operation_creates_no_template(): void
