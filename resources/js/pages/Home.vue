@@ -30,6 +30,8 @@ const props = defineProps({
     credit_totals: { type: Object, default: null },
     tag_spending: { type: Array, default: () => [] },
     top_expenses: { type: Array, default: () => [] },
+    crypto_totals: { type: Object, default: null },
+    pea_totals: { type: Object, default: null },
 });
 
 const page = usePage();
@@ -63,6 +65,10 @@ const accountShares = computed(() =>
 );
 
 const widgetsByKey = computed(() => Object.fromEntries(props.widgets.map((widget) => [widget.key, widget])));
+
+/* Variation du jour d'un portefeuille : accent en hausse, encre en baisse, discret à l'arrêt. */
+const dayChangeClass = (totals) =>
+    totals.day_change_cents === 0 ? 'text-ink-muted' : totals.day_change_cents > 0 ? 'text-accent-soft' : 'text-ink';
 
 const shows = (key) => widgetsByKey.value[key]?.enabled ?? false;
 const titleOf = (key) => widgetsByKey.value[key]?.title ?? '';
@@ -255,6 +261,36 @@ const { open: openBugReport } = useBugReport();
                     {{ plainMoney(props.credit_totals.monthly_cents) }} / mois ·
                     {{ props.credit_totals.count }}
                     {{ props.credit_totals.count > 1 ? 'crédits en cours' : 'crédit en cours' }}
+                </p>
+            </WidgetCard>
+
+            <!-- Comptes de marché : valeur du portefeuille et variation du jour,
+                 lue dans la réévaluation datée d'aujourd'hui. -->
+            <WidgetCard
+                v-if="shows(WIDGET.crypto) && props.crypto_totals"
+                :title="titleOf(WIDGET.crypto)"
+                :span="spanOf(WIDGET.crypto)"
+            >
+                <p class="mt-[5px] text-xl font-medium"><Amount :cents="props.crypto_totals.value_cents" /></p>
+                <p class="mt-0.5 text-[10px]" :class="dayChangeClass(props.crypto_totals)">
+                    <template v-if="props.crypto_totals.day_change_cents !== 0">
+                        {{ signedMoney(props.crypto_totals.day_change_cents) }} aujourd'hui
+                    </template>
+                    <template v-else>au dernier cours connu</template>
+                </p>
+            </WidgetCard>
+
+            <WidgetCard
+                v-if="shows(WIDGET.stockPlan) && props.pea_totals"
+                :title="titleOf(WIDGET.stockPlan)"
+                :span="spanOf(WIDGET.stockPlan)"
+            >
+                <p class="mt-[5px] text-xl font-medium"><Amount :cents="props.pea_totals.value_cents" /></p>
+                <p class="mt-0.5 text-[10px]" :class="dayChangeClass(props.pea_totals)">
+                    <template v-if="props.pea_totals.day_change_cents !== 0">
+                        {{ signedMoney(props.pea_totals.day_change_cents) }} aujourd'hui
+                    </template>
+                    <template v-else>au dernier cours connu</template>
                 </p>
             </WidgetCard>
 

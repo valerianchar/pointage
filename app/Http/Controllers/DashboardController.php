@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\AccountType;
 use App\Enums\DashboardWidget;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Queries\BalanceHistory;
 use App\Queries\CreditTotals;
+use App\Queries\MarketTypeTotals;
 use App\Queries\MonthlyPointing;
 use App\Queries\MonthlyTotals;
 use App\Queries\RecurringInstances;
@@ -28,6 +30,7 @@ class DashboardController extends Controller
         private readonly CreditTotals $creditTotals,
         private readonly TagSpending $tagSpending,
         private readonly TopExpenses $topExpenses,
+        private readonly MarketTypeTotals $marketTypeTotals,
     ) {}
 
     /**
@@ -90,6 +93,15 @@ class DashboardController extends Controller
 
         if ($this->shows(DashboardWidget::TopExpenses, $enabledWidgets)) {
             $data['top_expenses'] = $this->topExpenses->forUserMonth($user, $month);
+        }
+
+        // Null sans compte du type : la carte ne s'affiche pas, même cochée.
+        if ($this->shows(DashboardWidget::Crypto, $enabledWidgets)) {
+            $data['crypto_totals'] = $this->marketTypeTotals->forUser($user, AccountType::Crypto, $month);
+        }
+
+        if ($this->shows(DashboardWidget::StockPlan, $enabledWidgets)) {
+            $data['pea_totals'] = $this->marketTypeTotals->forUser($user, AccountType::StockPlan, $month);
         }
 
         return $data;

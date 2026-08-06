@@ -24,7 +24,7 @@ class DashboardWidgetTest extends TestCase
             ->get('/')
             ->assertOk()
             ->assertInertia(fn (AssertableInertia $page) => $page
-                ->has('widgets', 11)
+                ->has('widgets', 13)
                 ->where('widgets.0.key', DashboardWidget::Wealth->value)
                 ->where('widgets.0.label', 'Patrimoine')
                 ->where('widgets.0.span', 1)
@@ -80,7 +80,7 @@ class DashboardWidgetTest extends TestCase
             ->patch('/widgets', ['widgets' => ['meteo']])
             ->assertSessionHasErrors('widgets.0');
 
-        $this->assertCount(11, $user->fresh()->enabledDashboardWidgets());
+        $this->assertCount(13, $user->fresh()->enabledDashboardWidgets());
     }
 
     public function test_it_computes_the_savings_rate_and_the_month_pointing(): void

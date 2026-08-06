@@ -13,4 +13,6 @@ export const WIDGET = {
     tagSpending: 'tags',
     topExpenses: 'top',
     accountShare: 'repartition',
+    crypto: 'crypto',
+    stockPlan: 'pea',
 };

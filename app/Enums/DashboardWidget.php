@@ -15,6 +15,8 @@ enum DashboardWidget: string
     case TagSpending = 'tags';
     case TopExpenses = 'top';
     case AccountShare = 'repartition';
+    case Crypto = 'crypto';
+    case StockPlan = 'pea';
 
     /**
      * Libellé du sélecteur « Widgets affichés ».
@@ -33,6 +35,8 @@ enum DashboardWidget: string
             self::TagSpending => 'Dépenses par tag',
             self::TopExpenses => 'Top dépenses',
             self::AccountShare => 'Répartition par compte',
+            self::Crypto => 'Crypto',
+            self::StockPlan => 'PEA',
         };
     }
 
@@ -47,6 +51,8 @@ enum DashboardWidget: string
             self::Credits => 'Crédits — restant dû',
             self::TagSpending => 'Dépenses par tag — tous comptes',
             self::TopExpenses => 'Top dépenses du mois',
+            self::Crypto => 'Crypto — valeur du portefeuille',
+            self::StockPlan => 'PEA — valeur du portefeuille',
             default => $this->label(),
         };
     }

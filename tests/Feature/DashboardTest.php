@@ -36,6 +36,28 @@ class DashboardTest extends TestCase
                 ->where('accounts.0.pending_count', 2));
     }
 
+    public function test_the_market_widgets_total_their_accounts_and_show_the_day_change(): void
+    {
+        $user = User::factory()->create();
+        $crypto = Account::factory()->for($user)->ofType(AccountType::Crypto)->startingAt(500_000)->create();
+        Account::factory()->for($user)->ofType(AccountType::Crypto)->startingAt(250_000)->create();
+
+        // La réévaluation du jour donne la variation ; celle d'hier n'y entre pas.
+        Transaction::factory()->for($crypto)->income(12_500)
+            ->state(['is_revaluation' => true])->on(now()->toDateString())->create();
+        Transaction::factory()->for($crypto)->expense(99_000)
+            ->state(['is_revaluation' => true])->on(now()->subDay()->toDateString())->create();
+
+        $this->actingAs($user)
+            ->get('/')
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->where('crypto_totals.value_cents', 500_000 + 250_000 + 12_500 - 99_000)
+                ->where('crypto_totals.account_count', 2)
+                ->where('crypto_totals.day_change_cents', 12_500)
+                // Aucun PEA : la carte ne s'affiche pas, même cochée.
+                ->where('pea_totals', null));
+    }
+
     public function test_flows_from_other_months_are_left_out(): void
     {
         $user = User::factory()->create();
