@@ -53,6 +53,8 @@ class HandleInertiaRequests extends Middleware
             'bug_reports' => $user === null
                 ? []
                 : BugReportResource::collection($user->bugReports()->latest('id')->get())->resolve(),
+            // Clé publique VAPID : le navigateur en a besoin pour s'abonner aux rappels.
+            'vapid_public_key' => config('webpush.vapid.public_key'),
             'flash' => [
                 'success' => fn (): ?string => $request->session()->get('success'),
                 'error' => fn (): ?string => $request->session()->get('error'),

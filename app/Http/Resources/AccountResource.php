@@ -28,6 +28,7 @@ class AccountResource extends JsonResource
             'period_start_day' => $this->period_start_day,
             'period_end_day' => $this->period_end_day,
             'url' => route('accounts.show', $this->id),
+            'pointing_url' => route('pointing.session', $this->id),
             'period_url' => route('accounts.period', $this->id),
             // Résolue explicitement : une collection imbriquée non résolue se
             // sérialise enveloppée dans une clé « data » que le front n'attend pas.

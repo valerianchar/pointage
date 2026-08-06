@@ -1,6 +1,7 @@
 <?php
 
 use App\Console\Commands\GenerateRecurringTransactionsCommand;
+use App\Console\Commands\SendPointingRemindersCommand;
 use Illuminate\Support\Facades\Schedule;
 
 /*
@@ -10,4 +11,12 @@ use Illuminate\Support\Facades\Schedule;
  */
 Schedule::command(GenerateRecurringTransactionsCommand::class)
     ->dailyAt('00:05')
+    ->withoutOverlapping();
+
+/*
+ * Le rappel part en matinée, quand le relevé de la veille est consultable —
+ * une notification nocturne serait perdue dans la pile du réveil.
+ */
+Schedule::command(SendPointingRemindersCommand::class)
+    ->dailyAt('08:00')
     ->withoutOverlapping();

@@ -6,6 +6,7 @@ import Chip from '../../components/Chip.vue';
 import PhIcon from '../../components/PhIcon.vue';
 import TagSpendingBars from '../../components/TagSpendingBars.vue';
 import { useMoney } from '../../composables/useMoney';
+import { usePushSubscription } from '../../composables/usePushSubscription';
 import { routes } from '../../routes';
 
 const props = defineProps({
@@ -33,6 +34,12 @@ onUnmounted(() => desktopQuery.removeEventListener('change', onDesktopChange));
 const notePlaceholder = computed(() =>
     isDesktop.value ? 'Ex. Oubli : péage + retrait espèces non saisis' : 'Ex. Oubli : péage + espèces',
 );
+
+/* ------------------------------------------------------------------ */
+/* Rappels de pointage — notification navigateur                       */
+/* ------------------------------------------------------------------ */
+
+const push = usePushSubscription();
 
 /* ------------------------------------------------------------------ */
 /* Période de pointage — par compte                                    */
@@ -216,6 +223,35 @@ function varianceLabel(entry) {
                 <p v-else-if="periodAccount" class="mt-2 hidden text-[13px] text-ink-muted lg:block">
                     {{ periodNote(periodAccount, periodForm.period_start_day, periodForm.period_end_day) }}
                 </p>
+            </section>
+
+            <!-- Invisible quand le navigateur ne sait pas faire de Web Push. -->
+            <section
+                v-if="push.isSupported.value"
+                class="mt-2.5 flex items-center gap-3 rounded-card bg-surface p-3 lg:mt-3 lg:px-4 lg:py-3.5"
+            >
+                <PhIcon name="ph-bell-ringing" class="shrink-0 text-[19px] text-accent" />
+                <div class="min-w-0 flex-1">
+                    <p class="text-[15px] font-medium lg:text-[13px]">Rappel de pointage</p>
+                    <p class="text-[12px] text-ink-muted lg:text-[11px]">
+                        <span v-if="push.isDenied.value">
+                            Les notifications sont bloquées pour ce site dans les réglages du navigateur.
+                        </span>
+                        <span v-else-if="push.isSubscribed.value">Activé sur cet appareil.</span>
+                        <span v-else>
+                            Une notification à la fin de chaque période, pour pointer votre compte.
+                        </span>
+                    </p>
+                </div>
+                <button
+                    v-if="!push.isDenied.value"
+                    type="button"
+                    class="btn-outline shrink-0 px-3 py-1.5 text-[13px] lg:text-[12px]"
+                    :disabled="push.isWorking.value"
+                    @click="push.isSubscribed.value ? push.unsubscribe() : push.subscribe()"
+                >
+                    {{ push.isSubscribed.value ? 'Désactiver' : 'Activer' }}
+                </button>
             </section>
 
             <div class="mt-2.5 grid grid-cols-2 gap-[7px] lg:mt-3.5 lg:grid-cols-3 lg:gap-2.5">

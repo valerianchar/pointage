@@ -56,6 +56,13 @@ const pointingLabel = computed(() =>
                     <span class="text-accent-soft">{{ pointingLabel }}</span>
                 </div>
                 <Gauge :percent="pointingPercent" label="Progression du pointage" class="mt-1.5 lg:mt-2.5" />
+                <Link
+                    v-if="props.account.pending_count > 0"
+                    :href="props.account.pointing_url"
+                    class="mt-2.5 block text-[13px] text-accent-soft transition-colors hover:text-ink lg:mt-3 lg:text-[12px]"
+                >
+                    Pointer maintenant, relevé en main →
+                </Link>
             </div>
 
             <!-- La maquette pose ces barres à même le fond sur mobile, en carte sur desktop. -->

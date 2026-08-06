@@ -53,10 +53,17 @@ class TransactionController extends Controller
             $request->filled('recurring_day') ? $request->integer('recurring_day') : null,
         );
 
+        $message = $transaction === null
+            ? 'Récurrente programmée : elle apparaîtra le jour choisi.'
+            : 'Opération ajoutée, en attente de pointage.';
+
+        // Le pointage guidé ajoute des oublis sans quitter sa file : il reste sur place.
+        if ($request->boolean('stay')) {
+            return back()->with('success', $message);
+        }
+
         return redirect()
             ->route('accounts.show', $account)
-            ->with('success', $transaction === null
-                ? 'Récurrente programmée : elle apparaîtra le jour choisi.'
-                : 'Opération ajoutée, en attente de pointage.');
+            ->with('success', $message);
     }
 }

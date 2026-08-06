@@ -20,6 +20,7 @@ export const routes = {
     closings: '/clotures',
     tags: '/tags',
     bugReports: '/signalements',
+    pushSubscription: '/notifications/abonnement',
     privacy: '/confidentialite',
     widgets: '/widgets',
     account: (accountId) => `/compte/${accountId}`,

@@ -92,3 +92,44 @@ async function networkThenOfflinePage(request) {
         );
     }
 }
+
+/*
+ * Rappels de pointage. Le serveur envoie un JSON { title, body, data.url } à la
+ * fin de la période de pointage d'un compte ; cliquer ouvre le pointage guidé.
+ */
+self.addEventListener('push', (event) => {
+    if (!event.data) {
+        return;
+    }
+
+    const payload = event.data.json();
+
+    event.waitUntil(
+        self.registration.showNotification(payload.title ?? 'Pointage', {
+            body: payload.body ?? '',
+            icon: '/icons/icon-192.png',
+            badge: '/icons/icon-192.png',
+            lang: 'fr',
+            data: payload.data ?? {},
+        }),
+    );
+});
+
+self.addEventListener('notificationclick', (event) => {
+    event.notification.close();
+
+    const url = event.notification.data?.url ?? '/';
+
+    event.waitUntil(
+        clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windows) => {
+            // Une fenêtre de l'application est déjà ouverte : on la réutilise.
+            const existing = windows.find((window) => new URL(window.url).origin === self.location.origin);
+
+            if (existing) {
+                return existing.focus().then((focused) => focused.navigate(url));
+            }
+
+            return clients.openWindow(url);
+        }),
+    );
+});

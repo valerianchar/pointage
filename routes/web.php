@@ -10,7 +10,9 @@ use App\Http\Controllers\ClosingController;
 use App\Http\Controllers\CreditController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DashboardWidgetController;
+use App\Http\Controllers\PointingSessionController;
 use App\Http\Controllers\PrivacyController;
+use App\Http\Controllers\PushSubscriptionController;
 use App\Http\Controllers\RecurringTransactionController;
 use App\Http\Controllers\ScheduledTaskController;
 use App\Http\Controllers\TagController;
@@ -53,6 +55,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/nouveau-compte', [AccountController::class, 'create'])->name('accounts.create');
         Route::post('/comptes', [AccountController::class, 'store'])->name('accounts.store');
         Route::get('/compte/{account}', [AccountController::class, 'show'])->name('accounts.show');
+        Route::get('/compte/{account}/pointage', [PointingSessionController::class, 'show'])
+            ->name('pointing.session');
 
         Route::get('/ajouter', [TransactionController::class, 'create'])->name('transactions.create');
         Route::post('/operations', [TransactionController::class, 'store'])->name('transactions.store');
@@ -80,6 +84,11 @@ Route::middleware('auth')->group(function () {
         Route::post('/signalements', [BugReportController::class, 'store'])
             ->middleware('throttle:5,1')
             ->name('bug-reports.store');
+
+        Route::post('/notifications/abonnement', [PushSubscriptionController::class, 'store'])
+            ->name('push-subscriptions.store');
+        Route::delete('/notifications/abonnement', [PushSubscriptionController::class, 'destroy'])
+            ->name('push-subscriptions.destroy');
 
         Route::patch('/confidentialite', [PrivacyController::class, 'update'])->name('privacy.update');
     });

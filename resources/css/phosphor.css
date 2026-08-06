@@ -40,6 +40,7 @@
 
 .ph-arrows-clockwise::before { content: '\e094'; }
 .ph-bank::before { content: '\e0b4'; }
+.ph-bell-ringing::before { content: '\e5e8'; }
 .ph-bug::before { content: '\e5f4'; }
 .ph-calendar-check::before { content: '\e712'; }
 .ph-caret-left::before { content: '\e138'; }
