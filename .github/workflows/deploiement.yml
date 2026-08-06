@@ -147,23 +147,20 @@ jobs:
                   chmod 600 ~/.ssh/known_hosts
 
             # Le serveur n'héberge aucun code source : il reçoit la description de
-            # la pile, et tout le reste vient du registre.
+            # la pile et le script de bascule, tout le reste vient du registre.
             - name: Téléverser la description de la pile
               run: |
-                  scp -i ~/.ssh/deploiement compose.deploy.yaml \
-                    "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/srv/pointage/compose.deploy.yaml"
+                  scp -i ~/.ssh/deploiement compose.deploy.yaml redeploie.sh \
+                    "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/srv/pointage/"
 
+            # La bascule vit dans redeploie.sh, le même script qu'on lance à la
+            # main sur le serveur : une seule logique de déploiement.
             - name: Déployer
               env:
                   IMAGE: ${{ needs.image.outputs.reference }}
               run: |
                   ssh -i ~/.ssh/deploiement "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" \
-                    "set -e
-                     cd /srv/pointage
-                     export POINTAGE_IMAGE='$IMAGE'
-                     docker compose -f compose.deploy.yaml pull
-                     docker compose -f compose.deploy.yaml up -d --remove-orphans
-                     docker image prune -f"
+                    "cd /srv/pointage && chmod +x redeploie.sh && ./redeploie.sh '$IMAGE'"
 
             - name: Vérifier que l'application répond
               # Le conteneur applique les migrations et reconstruit ses caches avant

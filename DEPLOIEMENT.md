@@ -555,6 +555,17 @@ le site est réellement debout.
 Comme à l'étape [B6](#b6-créer-votre-profil-puis-fermer-la-porte). Modifiez `.env` sur
 le serveur, puis relancez la pile — ou poussez un commit, ce qui la relancera aussi.
 
+Pour relancer la pile à la main, le script de bascule déposé par la CI fait tout —
+tirage de l'image, bascule, nettoyage, vérification que le site répond :
+
+```bash
+cd /srv/pointage && ./redeploie.sh
+```
+
+Sans argument il recharge la configuration avec l'image en place ; `./redeploie.sh
+latest` bascule sur la dernière image publiée, et `./redeploie.sh <sha>` revient sur
+l'image d'un commit précis — utile pour annuler un déploiement raté.
+
 Les sauvegardes de l'étape [B8](#b8-sauvegardes) s'appliquent telles quelles, en
 remplaçant `compose.prod.yaml` par `compose.deploy.yaml`.
 
