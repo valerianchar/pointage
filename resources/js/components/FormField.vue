@@ -23,6 +23,6 @@ const props = defineProps({
             </span>
             <slot />
         </label>
-        <p v-if="props.error" class="mt-1.5 text-[11px] text-accent-soft">{{ props.error }}</p>
+        <p v-if="props.error" class="mt-1.5 text-[13px] text-accent-soft">{{ props.error }}</p>
     </div>
 </template>

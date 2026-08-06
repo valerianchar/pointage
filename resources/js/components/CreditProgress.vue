@@ -13,7 +13,7 @@ const props = defineProps({
             :label="`Remboursement de ${props.credit.name}`"
             class="flex-1"
         />
-        <span class="shrink-0 text-[9px] text-accent-soft lg:text-[10px]">
+        <span class="shrink-0 text-[11px] text-accent-soft lg:text-[10px]">
             {{ props.credit.repaid_percent }} % remboursé
         </span>
     </div>

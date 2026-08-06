@@ -21,7 +21,7 @@ defineEmits(['update:modelValue']);
                 v-for="option in props.options"
                 :key="option.value"
                 :value="option.value"
-                class="flex-1 cursor-pointer rounded-card border py-[7px] text-center text-[12px] transition-colors lg:py-2 lg:text-[13px]"
+                class="flex-1 cursor-pointer rounded-card border py-[7px] text-center text-[14px] transition-colors lg:py-2 lg:text-[13px]"
                 :class="
                     option.value === props.modelValue
                         ? 'border-accent bg-accent-surface text-accent-soft'

@@ -48,7 +48,7 @@ function statusClasses(report) {
             >
                 <div class="flex items-center gap-2 lg:gap-2.5">
                     <PhIcon name="ph-bug" class="text-[18px] text-accent lg:text-[19px]" />
-                    <DialogTitle class="flex-1 text-[15px] font-medium lg:text-[16px]">Signaler un bug</DialogTitle>
+                    <DialogTitle class="flex-1 text-[16px] font-medium lg:text-[16px]">Signaler un bug</DialogTitle>
                     <button
                         type="button"
                         class="cursor-pointer text-[16px] text-ink-muted transition-colors hover:text-accent-soft"
@@ -60,7 +60,7 @@ function statusClasses(report) {
                 </div>
 
                 <template v-if="!sent">
-                    <DialogDescription class="mt-[5px] text-[10px] text-ink-muted lg:mt-1.5 lg:text-[11px]">
+                    <DialogDescription class="mt-[5px] text-[12px] text-ink-muted lg:mt-1.5 lg:text-[11px]">
                         <span class="lg:hidden">Envoyé par e-mail au mainteneur de l'application avec votre description.</span>
                         <span class="hidden lg:inline">
                             Votre signalement est envoyé par e-mail au mainteneur de l'application avec la
@@ -72,10 +72,10 @@ function statusClasses(report) {
                     <input
                         v-model="form.subject"
                         type="text"
-                        class="field text-[13px]"
+                        class="field"
                         placeholder="Ex. Le pointage ne s'enregistre pas"
                     />
-                    <p v-if="form.errors.subject" class="mt-1.5 text-[11px] text-accent-soft">
+                    <p v-if="form.errors.subject" class="mt-1.5 text-[13px] text-accent-soft">
                         {{ form.errors.subject }}
                     </p>
 
@@ -83,20 +83,20 @@ function statusClasses(report) {
                     <textarea
                         v-model="form.description"
                         :rows="4"
-                        class="field resize-y text-[13px] lg:min-h-[110px]"
+                        class="field resize-y lg:min-h-[110px]"
                         :placeholder="'Décrivez ce qui s\'est passé et comment le reproduire…'"
                     />
-                    <p v-if="form.errors.description" class="mt-1.5 text-[11px] text-accent-soft">
+                    <p v-if="form.errors.description" class="mt-1.5 text-[13px] text-accent-soft">
                         {{ form.errors.description }}
                     </p>
 
                     <button
                         type="button"
-                        class="btn-outline mt-3 flex w-full items-center justify-center gap-2 py-2.5 text-[13px] lg:mt-3.5"
+                        class="btn-outline mt-3 flex w-full items-center justify-center gap-2 py-2.5 text-[15px] lg:mt-3.5"
                         :disabled="form.processing"
                         @click="send"
                     >
-                        <PhIcon name="ph-paper-plane-tilt" class="text-[15px]" />
+                        <PhIcon name="ph-paper-plane-tilt" class="text-[16px]" />
                         Envoyer au mainteneur
                     </button>
                 </template>
@@ -104,8 +104,8 @@ function statusClasses(report) {
                 <div v-else class="mt-3 flex items-start gap-2.5 rounded-card bg-surface p-3 lg:mt-3.5 lg:p-3.5">
                     <PhIcon name="ph-check-circle" class="mt-px text-[18px] text-accent lg:text-[19px]" />
                     <div>
-                        <p class="text-[13px] font-medium">Signalement envoyé</p>
-                        <p class="mt-0.5 text-[10px] text-ink-muted lg:text-[11px]">
+                        <p class="text-[15px] font-medium">Signalement envoyé</p>
+                        <p class="mt-0.5 text-[12px] text-ink-muted lg:text-[11px]">
                             Un e-mail avec votre description a été envoyé au mainteneur. Vous serez notifié de la
                             résolution.
                         </p>
@@ -121,11 +121,11 @@ function statusClasses(report) {
                             class="flex items-center gap-2.5 border-b border-hairline-soft py-2"
                         >
                             <div class="min-w-0 flex-1">
-                                <p class="truncate text-[12px]">{{ report.subject }}</p>
-                                <p class="mt-px text-[9px] text-ink-muted lg:text-[10px]">{{ report.date_label }}</p>
+                                <p class="truncate text-[14px]">{{ report.subject }}</p>
+                                <p class="mt-px text-[11px] text-ink-muted lg:text-[10px]">{{ report.date_label }}</p>
                             </div>
                             <span
-                                class="shrink-0 rounded-pill border px-2 py-0.5 text-[10px] lg:px-[9px]"
+                                class="shrink-0 rounded-pill border px-2 py-0.5 text-[12px] lg:px-[9px]"
                                 :class="statusClasses(report)"
                             >
                                 {{ report.status_label }}

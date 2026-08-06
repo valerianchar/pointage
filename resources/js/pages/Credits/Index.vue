@@ -67,17 +67,17 @@ function deleteCredit(credit) {
 
     <div class="max-w-[720px]">
         <h1 class="text-xl lg:text-[22px]">Crédits</h1>
-        <p class="mt-1 text-[11px] text-ink-muted lg:mt-1.5 lg:text-[12px]">
+        <p class="mt-1 text-[13px] text-ink-muted lg:mt-1.5 lg:text-[12px]">
             Déclarez vos crédits par compte et suivez le capital restant.
         </p>
 
-        <p v-if="accounts.length === 0" class="mt-3 text-[13px] text-ink-muted">
+        <p v-if="accounts.length === 0" class="mt-3 text-[15px] text-ink-muted">
             Déclarez d'abord un compte :
             <Link :href="routes.accountCreate" class="text-accent-soft">déclarer un compte</Link>.
         </p>
 
         <template v-else>
-            <p v-if="props.credits.length === 0" class="mt-4 text-[13px] text-ink-muted">
+            <p v-if="props.credits.length === 0" class="mt-4 text-[15px] text-ink-muted">
                 Aucun crédit déclaré. Renseignez-en un ci-dessous pour suivre son remboursement.
             </p>
 
@@ -90,17 +90,17 @@ function deleteCredit(credit) {
                     <div class="flex items-center gap-2.5 lg:gap-3">
                         <!-- L'icône n'apparaît qu'en desktop, comme sur la maquette. -->
                         <PhIcon name="ph-hand-coins" class="hidden text-[18px] text-accent lg:block" />
-                        <p class="min-w-0 flex-1 truncate text-[13px] font-medium">{{ credit.name }}</p>
+                        <p class="min-w-0 flex-1 truncate text-[15px] font-medium">{{ credit.name }}</p>
                         <div class="shrink-0 text-right">
-                            <Amount :cents="credit.remaining_cents" class="block text-[13px] lg:text-[14px]" />
-                            <span class="block text-[9px] text-ink-muted lg:text-[10px]">
+                            <Amount :cents="credit.remaining_cents" class="block text-[15px] lg:text-[14px]" />
+                            <span class="block text-[11px] text-ink-muted lg:text-[10px]">
                                 <span class="lg:hidden">restant dû</span>
                                 <span class="hidden lg:inline">capital restant</span>
                             </span>
                         </div>
                         <button
                             type="button"
-                            class="shrink-0 cursor-pointer text-[13px] text-ink-muted transition-colors hover:text-accent-soft lg:text-[14px]"
+                            class="shrink-0 cursor-pointer text-[15px] text-ink-muted transition-colors hover:text-accent-soft lg:text-[14px]"
                             :aria-label="`Supprimer le crédit ${credit.name}`"
                             @click="deleteCredit(credit)"
                         >
@@ -110,10 +110,10 @@ function deleteCredit(credit) {
 
                     <!-- Compte, échéance et durée prennent toute la largeur de la carte :
                          serrées à côté du nom, elles se replieraient sur mobile. -->
-                    <p class="mt-1 text-[10px] text-ink-muted lg:text-[11px]">
+                    <p class="mt-1 text-[12px] text-ink-muted lg:text-[11px]">
                         {{ credit.account_name }} · {{ monthlyLabel(credit) }}{{ debitDaySuffix(credit) }}
                     </p>
-                    <p v-if="scheduleLabel(credit)" class="text-[10px] text-ink-faint">
+                    <p v-if="scheduleLabel(credit)" class="text-[12px] text-ink-faint">
                         {{ scheduleLabel(credit) }}
                     </p>
 
@@ -226,13 +226,13 @@ function deleteCredit(credit) {
                         {{ account.name }}
                     </Chip>
                 </div>
-                <p v-if="form.errors.account_id" class="mt-1.5 text-[11px] text-accent-soft">
+                <p v-if="form.errors.account_id" class="mt-1.5 text-[13px] text-accent-soft">
                     {{ form.errors.account_id }}
                 </p>
 
                 <button
                     type="submit"
-                    class="btn-outline mt-3.5 w-full py-2.5 text-[13px] lg:mt-4"
+                    class="btn-outline mt-3.5 w-full py-2.5 text-[15px] lg:mt-4"
                     :disabled="form.processing"
                 >
                     Déclarer le crédit

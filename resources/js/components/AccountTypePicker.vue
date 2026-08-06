@@ -35,7 +35,7 @@ defineEmits(['update:modelValue']);
             />
             <PhIcon :name="type.icon" class="text-[17px] text-accent" />
             <span
-                class="text-[13px]"
+                class="text-[15px]"
                 :class="type.value === props.modelValue ? 'text-accent-soft' : 'text-ink-muted'"
             >
                 {{ type.label }}

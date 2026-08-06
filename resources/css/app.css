@@ -80,10 +80,16 @@
 }
 
 @utility label-caps {
-    font-size: 10px;
+    /* 11 px en mobile pour rester lisible sur un petit écran ; la maquette
+       desktop garde ses 10 px. */
+    font-size: 11px;
     letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--color-ink-muted);
+
+    @media (width >= theme(--breakpoint-lg)) {
+        font-size: 10px;
+    }
 }
 
 /* Champs et boutons : un seul contrat visuel, réutilisé par tous les écrans. */
@@ -96,7 +102,13 @@
     padding: 0.5625rem 0.625rem;
     color: var(--color-ink);
     font: inherit;
-    font-size: 14px;
+    /* Jamais moins de 16 px en mobile : en dessous, iOS zoome la page entière
+       au focus du champ, et l'interface paraît minuscule au retour. */
+    font-size: 16px;
+
+    @media (width >= theme(--breakpoint-lg)) {
+        font-size: 14px;
+    }
 
     &::placeholder {
         color: var(--color-ink-muted);

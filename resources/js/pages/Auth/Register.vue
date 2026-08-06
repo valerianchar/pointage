@@ -52,7 +52,7 @@ function submit() {
                 />
             </FormField>
 
-            <button type="submit" class="btn-outline mt-2 w-full py-[11px] text-[13px]" :disabled="form.processing">
+            <button type="submit" class="btn-outline mt-2 w-full py-[11px] text-[15px]" :disabled="form.processing">
                 Créer mon profil
             </button>
         </form>

@@ -158,16 +158,16 @@ const { open: openBugReport } = useBugReport();
         <!-- Mobile : patrimoine en grand, puis une carte qui rassemble flux et évolution. -->
         <div class="lg:hidden">
             <p class="mt-3 text-[30px] font-medium"><Amount :cents="totalBalanceCents" /></p>
-            <p class="text-[11px] text-ink-muted">Patrimoine total</p>
+            <p class="text-[13px] text-ink-muted">Patrimoine total</p>
 
             <div class="mt-3.5 rounded-card bg-surface p-3">
-                <div class="flex justify-between text-[11px]">
+                <div class="flex justify-between text-[13px]">
                     <span class="text-ink-muted">Ajouts du mois</span>
                     <Amount :cents="props.income_cents" signed class="text-accent-soft" />
                 </div>
                 <Gauge :percent="incomePercent" label="Ajouts du mois" class="my-[5px]" />
 
-                <div class="mt-2.5 flex justify-between text-[11px]">
+                <div class="mt-2.5 flex justify-between text-[13px]">
                     <span class="text-ink-muted">Dépenses du mois</span>
                     <Amount :cents="-props.expense_cents" signed />
                 </div>
@@ -179,7 +179,7 @@ const { open: openBugReport } = useBugReport();
                 />
 
                 <Sparkline :points="props.balance_history" class="h-[34px] gap-[3px]" />
-                <p class="mt-1.5 text-[10px] text-ink-muted">Évolution du solde — 8 dernières semaines</p>
+                <p class="mt-1.5 text-[12px] text-ink-muted">Évolution du solde — 8 dernières semaines</p>
             </div>
         </div>
 
@@ -336,7 +336,7 @@ const { open: openBugReport } = useBugReport();
         <div class="lg:hidden">
             <p class="label-caps mt-3.5">Mes comptes</p>
 
-            <div v-if="accounts.length === 0" class="mt-2 rounded-card bg-surface p-4 text-[13px] text-ink-muted">
+            <div v-if="accounts.length === 0" class="mt-2 rounded-card bg-surface p-4 text-[15px] text-ink-muted">
                 Aucun compte déclaré pour l'instant. Commencez par en déclarer un pour saisir et pointer vos
                 opérations.
             </div>
@@ -345,7 +345,7 @@ const { open: openBugReport } = useBugReport();
                 <AccountCard v-for="account in accounts" :key="account.id" :account="account" />
             </div>
 
-            <Link :href="routes.accountCreate" class="btn-outline mt-3 block w-full py-2.5 text-center text-[12px]">
+            <Link :href="routes.accountCreate" class="btn-outline mt-3 block w-full py-2.5 text-center text-[14px]">
                 + Déclarer un compte
             </Link>
         </div>

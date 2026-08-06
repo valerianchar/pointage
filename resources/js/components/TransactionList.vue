@@ -23,17 +23,17 @@ const props = defineProps({
                 :label="transaction.label"
             />
             <div class="min-w-0 flex-1">
-                <p class="truncate text-[13px]">{{ transaction.label }}</p>
-                <p class="mt-px flex items-center gap-1.5 text-[10px] text-ink-muted">
+                <p class="truncate text-[15px]">{{ transaction.label }}</p>
+                <p class="mt-px flex items-center gap-1.5 text-[12px] text-ink-muted">
                     <TagPill v-if="transaction.tag">{{ transaction.tag }}</TagPill>
                     <span>{{ transaction.date_label }}</span>
-                    <PhIcon v-if="transaction.is_recurring" name="ph-arrows-clockwise" class="text-[11px]" />
+                    <PhIcon v-if="transaction.is_recurring" name="ph-arrows-clockwise" class="text-[13px]" />
                 </p>
             </div>
             <Amount
                 :cents="transaction.amount_cents"
                 signed
-                class="text-[13px]"
+                class="text-[15px]"
                 :class="transaction.amount_cents > 0 ? 'text-accent-soft' : 'text-ink'"
             />
         </li>

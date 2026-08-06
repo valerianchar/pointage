@@ -47,9 +47,9 @@ function submit() {
                 </FormField>
             </div>
 
-            <p v-if="firstError" class="mt-2.5 text-[11px] text-accent-soft lg:text-[12px]">{{ firstError }}</p>
+            <p v-if="firstError" class="mt-2.5 text-[13px] text-accent-soft lg:text-[12px]">{{ firstError }}</p>
 
-            <button type="submit" class="btn-outline mt-5 w-full py-[11px] text-[13px]" :disabled="form.processing">
+            <button type="submit" class="btn-outline mt-5 w-full py-[11px] text-[15px]" :disabled="form.processing">
                 Se connecter
             </button>
         </form>

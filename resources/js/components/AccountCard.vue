@@ -15,12 +15,12 @@ const props = defineProps({
     >
         <PhIcon :name="props.account.icon" class="text-[19px] text-accent lg:text-[22px]" />
         <span class="min-w-0 flex-1">
-            <span class="block truncate text-[13px] font-medium lg:text-[14px]">{{ props.account.name }}</span>
-            <span class="block text-[10px] text-ink-muted lg:text-[11px]">{{ props.account.type_label }}</span>
+            <span class="block truncate text-[15px] font-medium lg:text-[14px]">{{ props.account.name }}</span>
+            <span class="block text-[12px] text-ink-muted lg:text-[11px]">{{ props.account.type_label }}</span>
         </span>
         <span class="text-right">
-            <Amount :cents="props.account.balance_cents" class="block text-[13px] lg:text-[15px]" />
-            <span v-if="props.account.pending_count > 0" class="block text-[10px] text-accent-soft lg:text-[11px]">
+            <Amount :cents="props.account.balance_cents" class="block text-[15px] lg:text-[15px]" />
+            <span v-if="props.account.pending_count > 0" class="block text-[12px] text-accent-soft lg:text-[11px]">
                 {{ props.account.pending_count }} à pointer
             </span>
         </span>

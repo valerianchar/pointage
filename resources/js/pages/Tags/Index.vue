@@ -41,7 +41,7 @@ function operationsLabel(count) {
     <div class="max-w-[640px]">
         <h1 class="text-xl lg:text-[22px]">Tags</h1>
 
-        <p v-if="accounts.length === 0" class="mt-3 text-[13px] text-ink-muted">
+        <p v-if="accounts.length === 0" class="mt-3 text-[15px] text-ink-muted">
             Déclarez d'abord un compte :
             <Link :href="routes.accountCreate" class="text-accent-soft">déclarer un compte</Link>.
         </p>
@@ -58,7 +58,7 @@ function operationsLabel(count) {
                 </Chip>
             </div>
 
-            <p class="mt-2.5 text-[10px] text-ink-muted lg:mt-3 lg:text-[11px]">{{ props.type_note }}</p>
+            <p class="mt-2.5 text-[12px] text-ink-muted lg:mt-3 lg:text-[11px]">{{ props.type_note }}</p>
 
             <ul class="mt-2.5">
                 <li
@@ -67,12 +67,12 @@ function operationsLabel(count) {
                     class="flex items-center gap-2 border-b border-hairline-soft py-2 lg:gap-2.5 lg:py-[9px]"
                 >
                     <TagPill>{{ tag.name }}</TagPill>
-                    <span class="flex-1 text-[10px] text-ink-muted lg:text-[11px]">
+                    <span class="flex-1 text-[12px] text-ink-muted lg:text-[11px]">
                         {{ operationsLabel(tag.transactions_count) }}
                     </span>
                     <button
                         type="button"
-                        class="cursor-pointer text-[13px] text-ink-muted transition-colors hover:text-accent-soft lg:text-[14px]"
+                        class="cursor-pointer text-[15px] text-ink-muted transition-colors hover:text-accent-soft lg:text-[14px]"
                         :aria-label="`Supprimer le tag ${tag.name}`"
                         @click="deleteTag(tag)"
                     >
@@ -81,17 +81,17 @@ function operationsLabel(count) {
                 </li>
             </ul>
 
-            <p v-if="props.tags.length === 0" class="mt-3 text-[13px] text-ink-muted">
+            <p v-if="props.tags.length === 0" class="mt-3 text-[15px] text-ink-muted">
                 Plus aucun tag sur ce compte.
             </p>
 
             <form class="mt-3 flex gap-1.5 lg:mt-3.5 lg:gap-2" @submit.prevent="addTag">
-                <input v-model="form.name" type="text" class="field min-w-0 flex-1 text-[13px]" placeholder="Nouveau tag" />
-                <button type="submit" class="btn-outline shrink-0 px-3.5 text-[12px] lg:px-4" :disabled="form.processing">
+                <input v-model="form.name" type="text" class="field min-w-0 flex-1" placeholder="Nouveau tag" />
+                <button type="submit" class="btn-outline shrink-0 px-3.5 text-[14px] lg:px-4" :disabled="form.processing">
                     Ajouter
                 </button>
             </form>
-            <p v-if="form.errors.name" class="mt-1.5 text-[11px] text-accent-soft">{{ form.errors.name }}</p>
+            <p v-if="form.errors.name" class="mt-1.5 text-[13px] text-accent-soft">{{ form.errors.name }}</p>
         </template>
     </div>
 </template>

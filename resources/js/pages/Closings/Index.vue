@@ -160,7 +160,7 @@ function varianceLabel(entry) {
     <div class="max-w-[720px]">
         <h1 class="text-xl lg:text-[22px]">Bilan du mois</h1>
 
-        <p v-if="accounts.length === 0" class="mt-3 text-[13px] text-ink-muted">
+        <p v-if="accounts.length === 0" class="mt-3 text-[15px] text-ink-muted">
             Déclarez d'abord un compte :
             <Link :href="routes.accountCreate" class="text-accent-soft">déclarer un compte</Link>.
         </p>
@@ -180,7 +180,7 @@ function varianceLabel(entry) {
                     </Chip>
                 </div>
 
-                <div class="mt-2.5 flex items-center gap-[7px] text-[11px] text-ink-muted lg:gap-2 lg:text-[12px]">
+                <div class="mt-2.5 flex items-center gap-[7px] text-[13px] text-ink-muted lg:gap-2 lg:text-[12px]">
                     <span>Du</span>
                     <input
                         v-model="periodForm.period_start_day"
@@ -188,7 +188,7 @@ function varianceLabel(entry) {
                         inputmode="numeric"
                         min="1"
                         max="31"
-                        class="field w-[46px] px-0 py-1.5 text-center text-[13px] bg-page! lg:w-[52px] lg:py-[7px]"
+                        class="field w-[46px] px-0 py-1.5 text-center bg-page! lg:w-[52px] lg:py-[7px]"
                         aria-label="Jour de début de la période"
                         @blur="savePeriod"
                     />
@@ -199,7 +199,7 @@ function varianceLabel(entry) {
                         inputmode="numeric"
                         min="1"
                         max="31"
-                        class="field w-[46px] px-0 py-1.5 text-center text-[13px] bg-page! lg:w-[52px] lg:py-[7px]"
+                        class="field w-[46px] px-0 py-1.5 text-center bg-page! lg:w-[52px] lg:py-[7px]"
                         aria-label="Jour de fin de la période"
                         @blur="savePeriod"
                     />
@@ -208,25 +208,25 @@ function varianceLabel(entry) {
 
                 <p
                     v-if="periodForm.errors.period_start_day || periodForm.errors.period_end_day"
-                    class="mt-1.5 text-[11px] text-accent-soft"
+                    class="mt-1.5 text-[13px] text-accent-soft"
                 >
                     {{ periodForm.errors.period_start_day ?? periodForm.errors.period_end_day }}
                 </p>
                 <!-- La note récapitulative n'apparaît que sur la maquette desktop. -->
-                <p v-else-if="periodAccount" class="mt-2 hidden text-[11px] text-ink-muted lg:block">
+                <p v-else-if="periodAccount" class="mt-2 hidden text-[13px] text-ink-muted lg:block">
                     {{ periodNote(periodAccount, periodForm.period_start_day, periodForm.period_end_day) }}
                 </p>
             </section>
 
             <div class="mt-2.5 grid grid-cols-2 gap-[7px] lg:mt-3.5 lg:grid-cols-3 lg:gap-2.5">
                 <div class="rounded-card bg-surface px-3 py-2.5 lg:p-3">
-                    <p class="label-caps text-[9px] lg:text-[10px]">Dépenses pointées</p>
+                    <p class="label-caps text-[11px] lg:text-[10px]">Dépenses pointées</p>
                     <p class="mt-1 text-[17px] font-medium lg:text-[20px]">
                         {{ signedMoney(-props.activity.expenses_cents) }}
                     </p>
                 </div>
                 <div class="rounded-card bg-surface px-3 py-2.5 lg:p-3">
-                    <p class="label-caps text-[9px] lg:text-[10px]">Ajouts pointés</p>
+                    <p class="label-caps text-[11px] lg:text-[10px]">Ajouts pointés</p>
                     <p class="mt-1 text-[17px] font-medium text-accent-soft lg:text-[20px]">
                         {{ signedMoney(props.activity.incomes_cents) }}
                     </p>
@@ -234,24 +234,24 @@ function varianceLabel(entry) {
                 <!-- La troisième carte n'existe qu'en desktop ; le mobile la remplace
                      par la ligne de texte posée sous la grille. -->
                 <div class="hidden rounded-card bg-surface lg:block lg:p-3">
-                    <p class="label-caps text-[10px]">Opérations</p>
+                    <p class="label-caps text-[12px]">Opérations</p>
                     <p class="mt-1 text-[20px] font-medium">{{ props.activity.pointed_count }} pointées</p>
-                    <p class="mt-0.5 text-[10px] text-ink-muted">{{ props.activity.pending_count }} restantes</p>
+                    <p class="mt-0.5 text-[12px] text-ink-muted">{{ props.activity.pending_count }} restantes</p>
                 </div>
             </div>
 
-            <p class="mt-2 text-[10px] text-ink-muted lg:hidden">
+            <p class="mt-2 text-[12px] text-ink-muted lg:hidden">
                 {{ props.activity.pointed_count }} pointées · {{ props.activity.pending_count }} restantes
             </p>
 
             <section v-if="props.activity.by_tag.length > 0" class="mt-2.5 rounded-card bg-surface p-3 lg:mt-2.5">
-                <p class="label-caps mb-1.5 text-[9px] lg:mb-2 lg:text-[10px]">Dépenses pointées par tag</p>
+                <p class="label-caps mb-1.5 text-[11px] lg:mb-2 lg:text-[10px]">Dépenses pointées par tag</p>
                 <TagSpendingBars :spending="props.activity.by_tag" />
             </section>
 
             <section v-if="closing" class="mt-3 rounded-card border border-accent bg-surface p-3 lg:mt-3.5 lg:p-4">
-                <h2 class="text-[14px] font-medium">Clôturer {{ props.month_label.toLowerCase() }}</h2>
-                <p class="mt-0.5 text-[10px] text-ink-muted lg:text-[11px]">
+                <h2 class="text-[16px] font-medium">Clôturer {{ props.month_label.toLowerCase() }}</h2>
+                <p class="mt-0.5 text-[12px] text-ink-muted lg:text-[11px]">
                     Comparez le solde de l'application avec le solde réel de votre banque.
                 </p>
 
@@ -270,14 +270,14 @@ function varianceLabel(entry) {
                 <!-- Mobile : ligne label/valeur ; desktop : deux colonnes empilées. -->
                 <div class="mt-2.5 lg:mt-3 lg:grid lg:grid-cols-2 lg:gap-3.5">
                     <div>
-                        <div class="flex items-center justify-between text-[12px] lg:block">
+                        <div class="flex items-center justify-between text-[14px] lg:block">
                             <p class="text-ink-muted lg:label-caps lg:mb-[5px]">Solde selon Pointage</p>
                             <Amount
                                 :cents="closingAccount.balance_cents"
                                 class="font-medium lg:block lg:py-2 lg:text-[18px]"
                             />
                         </div>
-                        <p class="mt-[3px] text-[9px] text-ink-muted lg:mt-0 lg:text-[10px]">
+                        <p class="mt-[3px] text-[11px] text-ink-muted lg:mt-0 lg:text-[10px]">
                             Période du {{ closingAccount.period_start_day }} au {{ closingAccount.period_end_day }}.
                         </p>
                     </div>
@@ -287,34 +287,34 @@ function varianceLabel(entry) {
                             v-model="closingForm.real_balance"
                             type="text"
                             inputmode="decimal"
-                            class="field bg-page! text-[14px] lg:text-[15px]"
+                            class="field bg-page! lg:text-[15px]"
                             placeholder="0,00 €"
                         />
-                        <p v-if="closingForm.errors.real_balance" class="mt-1.5 text-[11px] text-accent-soft">
+                        <p v-if="closingForm.errors.real_balance" class="mt-1.5 text-[13px] text-accent-soft">
                             {{ closingForm.errors.real_balance }}
                         </p>
                     </div>
                 </div>
 
                 <div v-if="varianceCents !== null" class="mt-2.5 rounded-card bg-page p-2.5 lg:mt-3 lg:p-3">
-                    <div class="flex justify-between text-[12px]">
+                    <div class="flex justify-between text-[14px]">
                         <span class="text-ink-muted">Écart</span>
                         <span class="font-medium text-accent-soft">{{ signedMoney(varianceCents) }}</span>
                     </div>
-                    <p class="mt-1 text-[10px] text-ink-muted lg:text-[11px]">{{ varianceMessage }}</p>
+                    <p class="mt-1 text-[12px] text-ink-muted lg:text-[11px]">{{ varianceMessage }}</p>
 
                     <p class="label-caps mt-2.5 mb-1">Commentaire sur l'écart</p>
                     <input
                         v-model="closingForm.note"
                         type="text"
-                        class="field bg-surface! text-[12px] lg:text-[13px]"
+                        class="field bg-surface! lg:text-[13px]"
                         :placeholder="notePlaceholder"
                     />
-                    <p class="mt-1 text-[9px] text-ink-muted lg:text-[10px]">
+                    <p class="mt-1 text-[11px] text-ink-muted lg:text-[10px]">
                         Décrivez les dépenses manquantes ou les oublis — visible dans
                         l'historique<span class="hidden lg:inline"> du bilan</span>.
                     </p>
-                    <p v-if="closingForm.errors.note" class="mt-1.5 text-[11px] text-accent-soft">
+                    <p v-if="closingForm.errors.note" class="mt-1.5 text-[13px] text-accent-soft">
                         {{ closingForm.errors.note }}
                     </p>
                 </div>
@@ -322,7 +322,7 @@ function varianceLabel(entry) {
                 <div class="mt-3 flex gap-1.5 lg:mt-3.5 lg:gap-2">
                     <button
                         type="button"
-                        class="btn-outline flex-1 py-2.5 text-[12px] lg:text-[13px]"
+                        class="btn-outline flex-1 py-2.5 text-[14px] lg:text-[13px]"
                         :disabled="closingForm.processing"
                         @click="confirmClosing"
                     >
@@ -331,7 +331,7 @@ function varianceLabel(entry) {
                     </button>
                     <button
                         type="button"
-                        class="cursor-pointer rounded-card border border-hairline px-3.5 py-2.5 text-[12px] text-ink-muted transition-colors hover:border-outline-muted lg:px-4 lg:text-[13px]"
+                        class="cursor-pointer rounded-card border border-hairline px-3.5 py-2.5 text-[14px] text-ink-muted transition-colors hover:border-outline-muted lg:px-4 lg:text-[13px]"
                         @click="cancelClosing"
                     >
                         Annuler
@@ -339,7 +339,7 @@ function varianceLabel(entry) {
                 </div>
             </section>
 
-            <button v-else type="button" class="btn-outline mt-3 w-full py-2.5 text-[13px] lg:mt-3.5" @click="closing = true">
+            <button v-else type="button" class="btn-outline mt-3 w-full py-2.5 text-[15px] lg:mt-3.5" @click="closing = true">
                 Clôturer le mois
             </button>
 
@@ -353,18 +353,18 @@ function varianceLabel(entry) {
                     >
                         <div class="flex items-center gap-2.5 lg:gap-3">
                             <div class="min-w-0 flex-1">
-                                <p class="text-[13px] font-medium">{{ entry.month_label }}</p>
-                                <p class="mt-0.5 text-[10px] text-ink-muted lg:text-[11px]">{{ closingSummary(entry) }}</p>
+                                <p class="text-[15px] font-medium">{{ entry.month_label }}</p>
+                                <p class="mt-0.5 text-[12px] text-ink-muted lg:text-[11px]">{{ closingSummary(entry) }}</p>
                             </div>
                             <span
-                                class="shrink-0 text-[11px]"
+                                class="shrink-0 text-[13px]"
                                 :class="entry.variance_cents === 0 ? 'text-accent-soft' : 'text-ink-muted'"
                             >
                                 {{ varianceLabel(entry) }}
                             </span>
                         </div>
-                        <p v-if="entry.note" class="mt-1.5 flex items-start gap-1.5 text-[10px] text-ink-muted lg:text-[11px]">
-                            <PhIcon name="ph-note" class="mt-px shrink-0 text-[12px] text-accent" />
+                        <p v-if="entry.note" class="mt-1.5 flex items-start gap-1.5 text-[12px] text-ink-muted lg:text-[11px]">
+                            <PhIcon name="ph-note" class="mt-px shrink-0 text-[14px] text-accent" />
                             <span>{{ entry.note }}</span>
                         </p>
                     </li>

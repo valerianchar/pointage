@@ -28,7 +28,7 @@ function togglePointing() {
     >
         <PhIcon
             name="ph-check"
-            class="text-[12px] text-page transition-opacity"
+            class="text-[14px] text-page transition-opacity"
             :class="props.pointed ? 'opacity-100' : 'opacity-0'"
         />
     </CheckboxRoot>

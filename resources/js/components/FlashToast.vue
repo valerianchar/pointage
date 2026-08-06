@@ -40,7 +40,7 @@ watch(
             :key="shownCount"
             v-model:open="isOpen"
             :duration="isError ? 6000 : 3500"
-            class="rounded-card border bg-surface px-4 py-2.5 text-[12px] shadow-lg data-[state=closed]:opacity-0"
+            class="rounded-card border bg-surface px-4 py-2.5 text-[14px] shadow-lg data-[state=closed]:opacity-0"
             :class="isError ? 'border-ink-muted text-ink' : 'border-accent text-accent-soft'"
         >
             <ToastTitle>{{ message }}</ToastTitle>

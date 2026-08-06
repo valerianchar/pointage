@@ -51,7 +51,7 @@ function signOut() {
                 />
             </FormField>
 
-            <button type="submit" class="btn-outline mt-5 w-full py-[11px] text-[13px]" :disabled="form.processing">
+            <button type="submit" class="btn-outline mt-5 w-full py-[11px] text-[15px]" :disabled="form.processing">
                 Déverrouiller
             </button>
 
@@ -59,7 +59,7 @@ function signOut() {
             <button
                 v-if="biometricsSupported"
                 type="button"
-                class="mt-2.5 flex w-full cursor-pointer items-center justify-center gap-[7px] py-[11px] text-[12px] text-ink-muted transition-colors hover:text-accent-soft"
+                class="mt-2.5 flex w-full cursor-pointer items-center justify-center gap-[7px] py-[11px] text-[14px] text-ink-muted transition-colors hover:text-accent-soft"
                 :disabled="biometricsConfirming"
                 @click="unlockWithBiometrics"
             >
@@ -67,7 +67,7 @@ function signOut() {
                 Continuer avec Face ID
             </button>
 
-            <p v-if="biometricsError" class="mt-2 text-center text-[11px] text-accent-soft">
+            <p v-if="biometricsError" class="mt-2 text-center text-[13px] text-accent-soft">
                 {{ biometricsError }}
             </p>
         </form>

@@ -41,7 +41,7 @@ const pointingLabel = computed(() =>
             </Link>
             <div>
                 <h1 class="text-[17px] lg:text-[22px]">{{ props.account.name }}</h1>
-                <p class="text-[10px] text-ink-muted lg:text-[11px]">{{ props.account.type_label }}</p>
+                <p class="text-[12px] text-ink-muted lg:text-[11px]">{{ props.account.type_label }}</p>
             </div>
             <div class="hidden flex-1 lg:block" />
             <Amount :cents="props.account.balance_cents" class="hidden text-[26px] font-medium lg:block" />
@@ -51,7 +51,7 @@ const pointingLabel = computed(() =>
 
         <div class="mt-2.5 grid gap-3.5 lg:mt-5 lg:grid-cols-2">
             <div class="rounded-card bg-surface px-3 py-2.5 lg:p-4">
-                <div class="flex justify-between text-[11px] lg:text-[12px]">
+                <div class="flex justify-between text-[13px] lg:text-[12px]">
                     <span>Pointage</span>
                     <span class="text-accent-soft">{{ pointingLabel }}</span>
                 </div>
@@ -76,10 +76,10 @@ const pointingLabel = computed(() =>
 
         <div class="mt-4 flex items-baseline justify-between lg:mt-[26px]">
             <p class="label-caps">Opérations — {{ props.month_label.toLowerCase() }}</p>
-            <Link :href="props.add_url" class="text-[11px] text-accent-soft lg:text-[12px]">+ Ajouter</Link>
+            <Link :href="props.add_url" class="text-[13px] text-accent-soft lg:text-[12px]">+ Ajouter</Link>
         </div>
 
-        <p v-if="props.transactions.length === 0" class="mt-3 text-[13px] text-ink-muted">
+        <p v-if="props.transactions.length === 0" class="mt-3 text-[15px] text-ink-muted">
             Aucune opération ce mois-ci.
         </p>
 

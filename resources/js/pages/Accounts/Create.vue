@@ -57,16 +57,16 @@ function submit() {
 
             <p class="label-caps mt-3.5 mb-1.5 lg:mt-4">Type de compte</p>
             <AccountTypePicker v-model="form.type" :types="props.types" />
-            <p v-if="form.errors.type" class="mt-1.5 text-[11px] text-accent-soft">{{ form.errors.type }}</p>
+            <p v-if="form.errors.type" class="mt-1.5 text-[13px] text-accent-soft">{{ form.errors.type }}</p>
 
-            <p class="mt-3 mb-1.5 text-[10px] text-ink-muted lg:mt-3.5 lg:text-[11px]">
+            <p class="mt-3 mb-1.5 text-[12px] text-ink-muted lg:mt-3.5 lg:text-[11px]">
                 Tags créés par défaut pour ce type :
             </p>
             <div class="flex flex-wrap gap-[5px] lg:gap-1.5">
                 <TagPill v-for="tag in selectedTypeTags" :key="tag">{{ tag }}</TagPill>
             </div>
 
-            <button type="submit" class="btn-outline mt-4 w-full py-2.5 text-[13px]" :disabled="form.processing">
+            <button type="submit" class="btn-outline mt-4 w-full py-2.5 text-[15px]" :disabled="form.processing">
                 Créer le compte
             </button>
         </form>
