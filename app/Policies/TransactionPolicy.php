@@ -11,4 +11,9 @@ class TransactionPolicy
     {
         return $transaction->account->user_id === $user->id;
     }
+
+    public function delete(User $user, Transaction $transaction): bool
+    {
+        return $transaction->account->user_id === $user->id;
+    }
 }

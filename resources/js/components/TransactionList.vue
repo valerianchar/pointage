@@ -1,4 +1,5 @@
 <script setup>
+import { Link } from '@inertiajs/vue3';
 import Amount from './Amount.vue';
 import PhIcon from './PhIcon.vue';
 import PointingToggle from './PointingToggle.vue';
@@ -36,6 +37,13 @@ const props = defineProps({
                 class="text-[15px]"
                 :class="transaction.amount_cents > 0 ? 'text-accent-soft' : 'text-ink'"
             />
+            <Link
+                :href="transaction.edit_url"
+                class="shrink-0 text-[15px] text-ink-muted transition-colors hover:text-accent-soft"
+                :aria-label="`Modifier ${transaction.label}`"
+            >
+                <PhIcon name="ph-pencil-simple" />
+            </Link>
         </li>
     </ul>
 </template>

@@ -5,9 +5,12 @@ namespace App\Http\Controllers;
 use App\Actions\RecordTransaction;
 use App\Enums\TransactionDirection;
 use App\Http\Requests\StoreTransactionRequest;
+use App\Http\Requests\UpdateTransactionRequest;
 use App\Http\Resources\AccountResource;
+use App\Http\Resources\TransactionResource;
 use App\Models\Account;
 use App\Models\Tag;
+use App\Models\Transaction;
 use App\Queries\UserAccounts;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
@@ -66,5 +69,45 @@ class TransactionController extends Controller
         return redirect()
             ->route('accounts.show', $account)
             ->with('success', $message);
+    }
+
+    public function edit(Transaction $transaction): Response
+    {
+        Gate::authorize('update', $transaction);
+
+        $transaction->load(['account.tags' => fn ($query) => $query->orderBy('id'), 'tag']);
+
+        return Inertia::render('Transactions/Edit', [
+            'transaction' => TransactionResource::make($transaction)->resolve(),
+            'account' => AccountResource::make($transaction->account)->resolve(),
+            'directions' => TransactionDirection::options(),
+        ]);
+    }
+
+    public function update(UpdateTransactionRequest $request, Transaction $transaction): RedirectResponse
+    {
+        Gate::authorize('update', $transaction);
+
+        $transaction->update([
+            'label' => $request->string('label')->trim()->value(),
+            'amount_cents' => $request->signedAmountCents(),
+            'occurred_on' => $request->date('occurred_on')->toDateString(),
+            'tag_id' => $request->filled('tag_id') ? $request->integer('tag_id') : null,
+        ]);
+
+        return redirect()
+            ->route('accounts.show', $transaction->account)
+            ->with('success', 'Opération modifiée.');
+    }
+
+    public function destroy(Transaction $transaction): RedirectResponse
+    {
+        Gate::authorize('delete', $transaction);
+
+        $transaction->delete();
+
+        return redirect()
+            ->route('accounts.show', $transaction->account)
+            ->with('success', 'Opération supprimée.');
     }
 }

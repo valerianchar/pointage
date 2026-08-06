@@ -26,7 +26,11 @@ class TransactionResource extends JsonResource
             'is_pointed' => $this->isPointed(),
             'is_recurring' => $this->recurring_transaction_id !== null,
             'account_name' => $this->whenLoaded('account', fn (): string => $this->account->name),
+            'tag_id' => $this->tag_id,
             'pointing_url' => route('transactions.pointing', $this->id),
+            'edit_url' => route('transactions.edit', $this->id),
+            'update_url' => route('transactions.update', $this->id),
+            'delete_url' => route('transactions.destroy', $this->id),
         ];
     }
 }

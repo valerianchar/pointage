@@ -1,4 +1,5 @@
 <script setup>
+import { Link } from '@inertiajs/vue3';
 import Amount from './Amount.vue';
 import PhIcon from './PhIcon.vue';
 import PointingToggle from './PointingToggle.vue';
@@ -21,6 +22,7 @@ const props = defineProps({
                     <th scope="col" class="w-[130px] py-2 font-normal">Tag</th>
                     <th scope="col" class="w-[90px] py-2 font-normal">Date</th>
                     <th scope="col" class="w-[110px] py-2 text-right font-normal">Montant</th>
+                    <th scope="col" class="w-11 py-2"><span class="sr-only">Modifier</span></th>
                 </tr>
             </thead>
             <tbody>
@@ -57,6 +59,15 @@ const props = defineProps({
                             signed
                             :class="transaction.amount_cents > 0 ? 'text-accent-soft' : 'text-ink'"
                         />
+                    </td>
+                    <td class="py-2.5 text-right">
+                        <Link
+                            :href="transaction.edit_url"
+                            class="text-[14px] text-ink-muted transition-colors hover:text-accent-soft"
+                            :aria-label="`Modifier ${transaction.label}`"
+                        >
+                            <PhIcon name="ph-pencil-simple" />
+                        </Link>
                     </td>
                 </tr>
             </tbody>

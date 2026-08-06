@@ -57,6 +57,12 @@ Route::middleware('auth')->group(function () {
 
         Route::get('/ajouter', [TransactionController::class, 'create'])->name('transactions.create');
         Route::post('/operations', [TransactionController::class, 'store'])->name('transactions.store');
+        Route::get('/operations/{transaction}/modifier', [TransactionController::class, 'edit'])
+            ->name('transactions.edit');
+        Route::patch('/operations/{transaction}', [TransactionController::class, 'update'])
+            ->name('transactions.update');
+        Route::delete('/operations/{transaction}', [TransactionController::class, 'destroy'])
+            ->name('transactions.destroy');
         Route::patch('/operations/{transaction}/pointage', [TransactionPointingController::class, 'update'])
             ->name('transactions.pointing');
 
