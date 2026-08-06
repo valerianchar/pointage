@@ -562,6 +562,28 @@ remplaçant `compose.prod.yaml` par `compose.deploy.yaml`.
 
 # Dépannage
 
+**Les rappels de pointage n'arrivent pas.** Trois conditions : les clés VAPID
+doivent être renseignées dans le `.env` du serveur — générez-les avec
+`docker compose -f compose.deploy.yaml exec app php artisan webpush:vapid --show`
+et recopiez les deux lignes —, le site doit être en HTTPS (déjà le cas), et les
+rappels doivent être activés depuis la page **Bilan** sur chaque appareil. La
+notification part le dernier jour de la période de pointage du compte, vers 8 h,
+seulement s'il reste des opérations à pointer.
+
+**Les e-mails ne partent pas (signalements de bug).** Sans bloc `MAIL_*` dans le
+`.env` du serveur, le mailer est « log » : les messages s'écrivent dans les journaux
+du conteneur au lieu d'être envoyés. Renseignez les lignes `MAIL_*` du modèle
+[.env.production.example](.env.production.example) — n'importe quel SMTP convient,
+Brevo offre 300 e-mails/jour — puis relancez la pile. Pour vérifier depuis le
+serveur :
+
+```bash
+cd /srv/pointage && docker compose -f compose.deploy.yaml exec app php artisan tinker --execute="Illuminate\Support\Facades\Mail::raw('Test Pointage', fn (\$m) => \$m->to(config('pointage.maintainer_email'))->subject('Test SMTP'));"
+```
+
+Si la commande échoue, le détail est dans les journaux :
+`docker compose -f compose.deploy.yaml logs app | grep -i mail`.
+
 **Le certificat n'arrive pas (chemin B).** Le domaine doit pointer vers l'IP *avant*
 le démarrage, et les ports doivent être ouverts des deux côtés (B2). Let's Encrypt
 limite les tentatives par semaine : corrigez la cause avant de relancer en boucle.
