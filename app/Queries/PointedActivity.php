@@ -49,13 +49,15 @@ final class PointedActivity
             ->filter(fn (Transaction $transaction) => $periods[$transaction->account_id]->contains($transaction->occurred_on));
 
         $pointed = $inWindow->filter(fn (Transaction $transaction) => $transaction->isPointed());
+        // Les réévaluations comptent dans le pointage, jamais dans les flux.
+        $pointedFlows = $pointed->where('is_revaluation', false);
 
         return [
-            'expenses_cents' => (int) (-1 * $pointed->where('amount_cents', '<', 0)->sum('amount_cents')),
-            'incomes_cents' => (int) $pointed->where('amount_cents', '>', 0)->sum('amount_cents'),
+            'expenses_cents' => (int) (-1 * $pointedFlows->where('amount_cents', '<', 0)->sum('amount_cents')),
+            'incomes_cents' => (int) $pointedFlows->where('amount_cents', '>', 0)->sum('amount_cents'),
             'pointed_count' => $pointed->count(),
             'pending_count' => $inWindow->count() - $pointed->count(),
-            'by_tag' => $this->spendingByTag($pointed),
+            'by_tag' => $this->spendingByTag($pointedFlows),
         ];
     }
 
@@ -71,6 +73,7 @@ final class PointedActivity
 
         $pointed = $account->transactions()
             ->whereNotNull('pointed_at')
+            ->where('is_revaluation', false)
             ->whereBetween('occurred_on', [$period->start->toDateString(), $period->end->toDateString()])
             ->get();
 

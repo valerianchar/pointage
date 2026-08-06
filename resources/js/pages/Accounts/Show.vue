@@ -1,6 +1,6 @@
 <script setup>
 import { computed, ref } from 'vue';
-import { Head, Link, router } from '@inertiajs/vue3';
+import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { DialogContent, DialogDescription, DialogOverlay, DialogPortal, DialogRoot, DialogTitle } from 'reka-ui';
 import Amount from '../../components/Amount.vue';
 import CreditSummaryCard from '../../components/CreditSummaryCard.vue';
@@ -25,6 +25,20 @@ const confirmingDeletion = ref(false);
 
 function deleteAccount() {
     router.delete(props.account.delete_url);
+}
+
+/* Réévaluation : recale le solde sur la valeur affichée par le courtier. */
+const revaluing = ref(false);
+const revaluationForm = useForm({ current_value: '' });
+
+function submitRevaluation() {
+    revaluationForm.post(props.account.revalue_url, {
+        preserveScroll: true,
+        onSuccess: () => {
+            revaluationForm.reset();
+            revaluing.value = false;
+        },
+    });
 }
 
 const pendingCount = computed(() => props.transactions.filter((transaction) => !transaction.is_pointed).length);
@@ -70,6 +84,14 @@ const pointingLabel = computed(() =>
                 >
                     Pointer maintenant, relevé en main →
                 </Link>
+                <button
+                    type="button"
+                    class="mt-2 flex cursor-pointer items-center gap-1.5 text-[13px] text-accent-soft transition-colors hover:text-ink lg:mt-2.5 lg:text-[12px]"
+                    @click="revaluing = true"
+                >
+                    <PhIcon name="ph-scales" class="text-[14px]" />
+                    Réévaluer — recaler sur la valeur réelle
+                </button>
             </div>
 
             <!-- La maquette pose ces barres à même le fond sur mobile, en carte sur desktop. -->
@@ -110,6 +132,50 @@ const pointingLabel = computed(() =>
             <PhIcon name="ph-trash" class="text-[14px]" />
             Supprimer ce compte
         </button>
+
+        <DialogRoot :open="revaluing" @update:open="(open) => (revaluing = open)">
+            <DialogPortal>
+                <DialogOverlay class="fixed inset-0 z-80 bg-[rgba(10,11,20,0.6)]" />
+                <DialogContent
+                    class="fixed top-1/2 left-1/2 z-90 w-[calc(100vw-3rem)] max-w-[400px] -translate-x-1/2 -translate-y-1/2 rounded-card border border-hairline bg-chrome p-4 outline-none lg:p-5"
+                >
+                    <DialogTitle class="text-[16px] font-medium">Réévaluer « {{ props.account.name }} »</DialogTitle>
+                    <DialogDescription class="mt-1.5 text-[13px] text-ink-muted lg:text-[12px]">
+                        Saisissez la valeur affichée par votre courtier ou votre plateforme : la différence devient
+                        une opération « Réévaluation marché », déjà pointée, exclue des statistiques de dépenses.
+                    </DialogDescription>
+                    <form class="mt-3" @submit.prevent="submitRevaluation">
+                        <p class="label-caps mb-[5px]">Valeur actuelle du compte</p>
+                        <input
+                            v-model="revaluationForm.current_value"
+                            type="text"
+                            inputmode="decimal"
+                            class="field"
+                            placeholder="0,00 €"
+                        />
+                        <p v-if="revaluationForm.errors.current_value" class="mt-1.5 text-[13px] text-accent-soft">
+                            {{ revaluationForm.errors.current_value }}
+                        </p>
+                        <div class="mt-3.5 flex gap-2">
+                            <button
+                                type="submit"
+                                class="btn-outline flex-1 py-2.5 text-[14px] lg:text-[13px]"
+                                :disabled="revaluationForm.processing"
+                            >
+                                Réévaluer
+                            </button>
+                            <button
+                                type="button"
+                                class="shrink-0 cursor-pointer rounded-card border border-hairline px-3.5 text-[14px] text-ink-muted transition-colors hover:border-outline-muted lg:text-[13px]"
+                                @click="revaluing = false"
+                            >
+                                Annuler
+                            </button>
+                        </div>
+                    </form>
+                </DialogContent>
+            </DialogPortal>
+        </DialogRoot>
 
         <DialogRoot :open="confirmingDeletion" @update:open="(open) => (confirmingDeletion = open)">
             <DialogPortal>

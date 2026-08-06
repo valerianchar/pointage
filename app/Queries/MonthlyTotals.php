@@ -17,6 +17,8 @@ final class MonthlyTotals
     {
         $totals = Transaction::query()
             ->whereIn('account_id', $user->accounts()->select('accounts.id'))
+            // Une réévaluation de marché n'est ni un ajout ni une dépense.
+            ->where('is_revaluation', false)
             ->whereBetween('occurred_on', [
                 $month->copy()->startOfMonth()->toDateString(),
                 $month->copy()->endOfMonth()->toDateString(),

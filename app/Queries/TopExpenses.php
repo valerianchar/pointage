@@ -20,6 +20,8 @@ final class TopExpenses
             ->leftJoin('tags', 'tags.id', '=', 'transactions.tag_id')
             ->where('accounts.user_id', $user->id)
             ->where('transactions.amount_cents', '<', 0)
+            // Une baisse de marché n'est pas une dépense.
+            ->where('transactions.is_revaluation', false)
             ->whereBetween('transactions.occurred_on', [
                 $month->copy()->startOfMonth()->toDateString(),
                 $month->copy()->endOfMonth()->toDateString(),

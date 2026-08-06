@@ -47,6 +47,12 @@ const props = defineProps({
                                 name="ph-arrows-clockwise"
                                 class="text-[12px] text-ink-muted"
                             />
+                            <PhIcon
+                                v-if="transaction.is_revaluation"
+                                name="ph-scales"
+                                class="text-[12px] text-ink-muted"
+                                title="Réévaluation de marché"
+                            />
                         </span>
                     </td>
                     <td class="py-2.5">

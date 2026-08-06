@@ -29,6 +29,12 @@ const props = defineProps({
                     <TagPill v-if="transaction.tag">{{ transaction.tag }}</TagPill>
                     <span>{{ transaction.date_label }}</span>
                     <PhIcon v-if="transaction.is_recurring" name="ph-arrows-clockwise" class="text-[13px]" />
+                    <PhIcon
+                        v-if="transaction.is_revaluation"
+                        name="ph-scales"
+                        class="text-[13px]"
+                        title="Réévaluation de marché"
+                    />
                 </p>
             </div>
             <Amount

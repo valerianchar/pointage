@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['label', 'amount_cents', 'occurred_on', 'pointed_at', 'tag_id', 'recurring_transaction_id'])]
+#[Fillable(['label', 'amount_cents', 'occurred_on', 'pointed_at', 'is_revaluation', 'tag_id', 'recurring_transaction_id'])]
 class Transaction extends Model
 {
     /** @use HasFactory<TransactionFactory> */
@@ -23,6 +23,7 @@ class Transaction extends Model
             'amount_cents' => 'integer',
             'occurred_on' => 'date',
             'pointed_at' => 'datetime',
+            'is_revaluation' => 'boolean',
         ];
     }
 

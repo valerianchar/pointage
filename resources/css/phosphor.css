@@ -59,6 +59,7 @@
 .ph-piggy-bank::before { content: '\ea04'; }
 .ph-plus::before { content: '\e3d4'; }
 .ph-plus-circle::before { content: '\e3d6'; }
+.ph-scales::before { content: '\e750'; }
 .ph-shield-check::before { content: '\e40c'; }
 .ph-sign-out::before { content: '\e42a'; }
 .ph-squares-four::before { content: '\e464'; }

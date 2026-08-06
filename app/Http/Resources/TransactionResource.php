@@ -25,6 +25,7 @@ class TransactionResource extends JsonResource
             'occurred_on' => $this->occurred_on->toDateString(),
             'is_pointed' => $this->isPointed(),
             'is_recurring' => $this->recurring_transaction_id !== null,
+            'is_revaluation' => $this->is_revaluation,
             'account_name' => $this->whenLoaded('account', fn (): string => $this->account->name),
             'tag_id' => $this->tag_id,
             'pointing_url' => route('transactions.pointing', $this->id),

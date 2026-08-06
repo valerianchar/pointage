@@ -136,6 +136,21 @@ const nextPeriodStartDay = computed(() =>
     closingAccount.value.period_end_day >= 31 ? 1 : closingAccount.value.period_end_day + 1,
 );
 
+/**
+ * L'écart d'un compte de marché est la dérive des cours, pas un oubli : ce
+ * bouton le transforme en opération de réévaluation. Le solde théorique
+ * rejoint le solde réel, et l'écart affiché retombe à zéro.
+ */
+const revaluationForm = useForm({ current_value: '' });
+
+function recordVarianceAsRevaluation() {
+    revaluationForm.current_value = closingForm.real_balance;
+    revaluationForm.post(closingAccount.value.revalue_url, {
+        preserveScroll: true,
+        preserveState: true,
+    });
+}
+
 /* Un oubli repéré sur le relevé : ajouté ici, il naît pointé. */
 const additionForm = useForm({
     account_id: null,
@@ -471,6 +486,19 @@ function varianceLabel(entry) {
                         <span class="font-medium text-accent-soft">{{ signedMoney(varianceCents) }}</span>
                     </div>
                     <p class="mt-1 text-[12px] text-ink-muted lg:text-[11px]">{{ varianceMessage }}</p>
+
+                    <!-- Pour un compte de marché (PEA, crypto), l'écart est la dérive
+                         des cours : un clic l'absorbe en opération de réévaluation. -->
+                    <button
+                        v-if="varianceCents !== 0"
+                        type="button"
+                        class="mt-2 flex cursor-pointer items-center gap-1.5 text-[13px] text-accent-soft transition-colors hover:text-ink lg:text-[12px]"
+                        :disabled="revaluationForm.processing"
+                        @click="recordVarianceAsRevaluation"
+                    >
+                        <PhIcon name="ph-scales" class="text-[14px]" />
+                        Enregistrer l'écart comme réévaluation de marché
+                    </button>
 
                     <p class="label-caps mt-2.5 mb-1">Commentaire sur l'écart</p>
                     <input

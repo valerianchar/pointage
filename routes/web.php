@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AccountController;
 use App\Http\Controllers\AccountPointingPeriodController;
+use App\Http\Controllers\AccountRevaluationController;
 use App\Http\Controllers\Auth\AppLockController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\RegisteredUserController;
@@ -55,6 +56,8 @@ Route::middleware('auth')->group(function () {
         Route::post('/comptes', [AccountController::class, 'store'])->name('accounts.store');
         Route::get('/compte/{account}', [AccountController::class, 'show'])->name('accounts.show');
         Route::delete('/compte/{account}', [AccountController::class, 'destroy'])->name('accounts.destroy');
+        Route::post('/compte/{account}/reevaluation', [AccountRevaluationController::class, 'store'])
+            ->name('accounts.revalue');
 
         Route::get('/ajouter', [TransactionController::class, 'create'])->name('transactions.create');
         Route::post('/operations', [TransactionController::class, 'store'])->name('transactions.store');
