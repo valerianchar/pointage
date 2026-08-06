@@ -51,6 +51,7 @@ class TransactionController extends Controller
             $request->boolean('is_recurring'),
             CarbonImmutable::now(),
             $request->filled('recurring_day') ? $request->integer('recurring_day') : null,
+            $request->boolean('pointed'),
         );
 
         $message = $transaction === null

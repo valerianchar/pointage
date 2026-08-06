@@ -31,6 +31,8 @@ class StoreTransactionRequest extends FormRequest
             'is_recurring' => ['boolean'],
             // Jour de chaque mois où la récurrente doit se produire.
             'recurring_day' => ['nullable', 'integer', 'min:1', 'max:31'],
+            // Un oubli ajouté depuis la clôture est déjà sur le relevé : il naît pointé.
+            'pointed' => ['boolean'],
         ];
     }
 

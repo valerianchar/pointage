@@ -10,7 +10,7 @@ use NotificationChannels\WebPush\WebPushMessage;
 /**
  * Rappel envoyé au navigateur le dernier jour de la période de pointage d'un
  * compte : il reste des opérations à rapprocher du relevé. Cliquer ouvre le
- * pointage guidé du compte.
+ * panneau de clôture du Bilan sur ce compte.
  */
 class PointingPeriodEnded extends Notification
 {
@@ -36,6 +36,6 @@ class PointingPeriodEnded extends Notification
         return (new WebPushMessage)
             ->title('Fin de période — '.$this->account->name)
             ->body('Votre relevé est arrivé ? Il reste '.$operations.'.')
-            ->data(['url' => route('pointing.session', $this->account, absolute: false)]);
+            ->data(['url' => route('closings.index', ['cloture' => $this->account->id, 'pointer' => 1], absolute: false)]);
     }
 }

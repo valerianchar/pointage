@@ -10,7 +10,6 @@ use App\Http\Controllers\ClosingController;
 use App\Http\Controllers\CreditController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DashboardWidgetController;
-use App\Http\Controllers\PointingSessionController;
 use App\Http\Controllers\PrivacyController;
 use App\Http\Controllers\PushSubscriptionController;
 use App\Http\Controllers\RecurringTransactionController;
@@ -55,8 +54,6 @@ Route::middleware('auth')->group(function () {
         Route::get('/nouveau-compte', [AccountController::class, 'create'])->name('accounts.create');
         Route::post('/comptes', [AccountController::class, 'store'])->name('accounts.store');
         Route::get('/compte/{account}', [AccountController::class, 'show'])->name('accounts.show');
-        Route::get('/compte/{account}/pointage', [PointingSessionController::class, 'show'])
-            ->name('pointing.session');
 
         Route::get('/ajouter', [TransactionController::class, 'create'])->name('transactions.create');
         Route::post('/operations', [TransactionController::class, 'store'])->name('transactions.store');

@@ -3,6 +3,7 @@
 namespace App\Http\Resources;
 
 use App\Models\Account;
+use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -27,8 +28,15 @@ class AccountResource extends JsonResource
             'pending_count' => (int) ($this->getAttributes()['pending_count'] ?? 0),
             'period_start_day' => $this->period_start_day,
             'period_end_day' => $this->period_end_day,
+            /*
+             * Jours restants avant la fin de la période de pointage courante —
+             * la bannière de rappel (J−5 à J−2) et l'écran « Pointage
+             * obligatoire » (J−1, J−0) s'en nourrissent sur toutes les pages.
+             */
+            'days_until_period_end' => (int) CarbonImmutable::now()
+                ->startOfDay()
+                ->diffInDays($this->pointingPeriod(CarbonImmutable::now())->end, false),
             'url' => route('accounts.show', $this->id),
-            'pointing_url' => route('pointing.session', $this->id),
             'period_url' => route('accounts.period', $this->id),
             // Résolue explicitement : une collection imbriquée non résolue se
             // sérialise enveloppée dans une clé « data » que le front n'attend pas.

@@ -1,9 +1,10 @@
 <script setup>
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
-import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
 import Amount from '../../components/Amount.vue';
 import Chip from '../../components/Chip.vue';
 import PhIcon from '../../components/PhIcon.vue';
+import PointingToggle from '../../components/PointingToggle.vue';
 import TagSpendingBars from '../../components/TagSpendingBars.vue';
 import { useMoney } from '../../composables/useMoney';
 import { usePushSubscription } from '../../composables/usePushSubscription';
@@ -13,6 +14,9 @@ const props = defineProps({
     month_label: { type: String, required: true },
     activity: { type: Object, required: true },
     closings: { type: Array, required: true },
+    closing_account_id: { type: Number, default: null },
+    closing_open: { type: Boolean, default: false },
+    closing_transactions: { type: Array, default: () => [] },
 });
 
 const page = usePage();
@@ -86,15 +90,70 @@ function savePeriod() {
 /* Clôture du mois                                                     */
 /* ------------------------------------------------------------------ */
 
-const closing = ref(false);
+// La bannière de rappel et l'écran « Pointage obligatoire » arrivent avec
+// ?cloture=X&pointer=1 : le panneau s'ouvre directement sur le bon compte.
+const closing = ref(props.closing_open);
 
 const closingForm = useForm({
-    account_id: accounts.value[0]?.id ?? null,
+    account_id: props.closing_account_id ?? accounts.value[0]?.id ?? null,
     real_balance: '',
     note: '',
 });
 
 const closingAccount = computed(() => accounts.value.find((account) => account.id === closingForm.account_id));
+
+/**
+ * Les opérations à pointer viennent du serveur pour le compte de l'URL :
+ * ouvrir le panneau ou changer de compte synchronise l'adresse, et l'état
+ * local (panneau ouvert, saisies) survit à la visite.
+ */
+function openClosingFor(accountId) {
+    closing.value = true;
+    closingForm.account_id = accountId;
+
+    router.get(
+        routes.bilan,
+        { cloture: accountId, pointer: 1 },
+        { preserveScroll: true, preserveState: true },
+    );
+}
+
+const pendingClosingCount = computed(
+    () => props.closing_transactions.filter((transaction) => !transaction.is_pointed).length,
+);
+const pendingClosingLabel = computed(() =>
+    pendingClosingCount.value > 0 ? `${pendingClosingCount.value} à pointer` : 'Tout est pointé',
+);
+
+/** « Clôture par anticipation possible » tant que la période court encore. */
+const closingAvailability = computed(() =>
+    closingAccount.value.days_until_period_end <= 0
+        ? 'Période terminée — clôture disponible.'
+        : `Fin de période le ${closingAccount.value.period_end_day} — clôture par anticipation possible.`,
+);
+
+const nextPeriodStartDay = computed(() =>
+    closingAccount.value.period_end_day >= 31 ? 1 : closingAccount.value.period_end_day + 1,
+);
+
+/* Un oubli repéré sur le relevé : ajouté ici, il naît pointé. */
+const additionForm = useForm({
+    account_id: null,
+    direction: 'depense',
+    amount: '',
+    label: '',
+    pointed: true,
+    stay: true,
+});
+
+function submitAddition() {
+    additionForm.account_id = closingForm.account_id;
+    additionForm.post(routes.transactionStore, {
+        preserveScroll: true,
+        preserveState: true,
+        onSuccess: () => additionForm.reset('amount', 'label'),
+    });
+}
 
 /**
  * Écart affiché en direct pendant la saisie ; le serveur reste seul juge du
@@ -288,8 +347,9 @@ function varianceLabel(entry) {
             <section v-if="closing" class="mt-3 rounded-card border border-accent bg-surface p-3 lg:mt-3.5 lg:p-4">
                 <h2 class="text-[16px] font-medium">Clôturer {{ props.month_label.toLowerCase() }}</h2>
                 <p class="mt-0.5 text-[12px] text-ink-muted lg:text-[11px]">
-                    Comparez le solde de l'application avec le solde réel de votre banque.
+                    Pointez toutes vos opérations du mois, ajoutez les oublis, puis comparez avec votre relevé.
                 </p>
+                <p class="mt-0.5 text-[12px] text-accent-soft lg:text-[11px]">{{ closingAvailability }}</p>
 
                 <p class="label-caps mt-2.5 mb-1.5 lg:mt-3">Compte à vérifier</p>
                 <div class="flex flex-wrap gap-[5px] lg:gap-1.5">
@@ -297,11 +357,84 @@ function varianceLabel(entry) {
                         v-for="account in accounts"
                         :key="account.id"
                         :selected="account.id === closingForm.account_id"
-                        @click="closingForm.account_id = account.id"
+                        @click="openClosingFor(account.id)"
                     >
                         {{ account.name }}
                     </Chip>
                 </div>
+
+                <div class="mt-2.5 mb-1 flex items-center justify-between lg:mt-3">
+                    <p class="label-caps">Pointer les opérations</p>
+                    <p class="text-[12px] text-accent-soft lg:text-[11px]">{{ pendingClosingLabel }}</p>
+                </div>
+                <ul class="max-h-[170px] overflow-y-auto rounded-card bg-page px-2.5 py-0.5 lg:max-h-[200px]">
+                    <li
+                        v-for="transaction in props.closing_transactions"
+                        :key="transaction.id"
+                        class="flex items-center gap-2 border-b border-hairline-soft py-[7px] last:border-b-0 lg:gap-2.5"
+                        :class="transaction.is_pointed ? 'opacity-55' : ''"
+                    >
+                        <PointingToggle
+                            :pointed="transaction.is_pointed"
+                            :url="transaction.pointing_url"
+                            :label="transaction.label"
+                            class="scale-90"
+                        />
+                        <span class="min-w-0 flex-1 truncate text-[13px] lg:text-[12px]">{{ transaction.label }}</span>
+                        <Amount
+                            :cents="transaction.amount_cents"
+                            signed
+                            class="shrink-0 text-[13px] lg:text-[12px]"
+                            :class="transaction.amount_cents > 0 ? 'text-accent-soft' : ''"
+                        />
+                    </li>
+                    <li v-if="props.closing_transactions.length === 0" class="py-2 text-[12px] text-ink-muted">
+                        Aucune opération sur cette période.
+                    </li>
+                </ul>
+
+                <p class="label-caps mt-2.5 mb-1">Ajouter un oubli</p>
+                <div class="mb-1.5 flex gap-[5px]">
+                    <Chip
+                        :selected="additionForm.direction === 'depense'"
+                        @click="additionForm.direction = 'depense'"
+                    >
+                        Dépense
+                    </Chip>
+                    <Chip :selected="additionForm.direction === 'ajout'" @click="additionForm.direction = 'ajout'">
+                        Entrée
+                    </Chip>
+                </div>
+                <form class="flex gap-[5px] lg:gap-1.5" @submit.prevent="submitAddition">
+                    <input
+                        v-model="additionForm.label"
+                        type="text"
+                        class="field min-w-0 flex-1 bg-page! py-[7px]"
+                        placeholder="Libellé"
+                        aria-label="Libellé de l'oubli"
+                    />
+                    <input
+                        v-model="additionForm.amount"
+                        type="text"
+                        inputmode="decimal"
+                        class="field w-[86px] shrink-0 bg-page! py-[7px] lg:w-[96px]"
+                        placeholder="0,00 €"
+                        aria-label="Montant de l'oubli"
+                    />
+                    <button
+                        type="submit"
+                        class="btn-outline shrink-0 px-2.5 text-[13px] lg:px-3 lg:text-[12px]"
+                        :disabled="additionForm.processing"
+                    >
+                        OK
+                    </button>
+                </form>
+                <p v-if="additionForm.errors.amount" class="mt-1.5 text-[13px] text-accent-soft">
+                    {{ additionForm.errors.amount }}
+                </p>
+                <p v-if="additionForm.errors.label" class="mt-1.5 text-[13px] text-accent-soft">
+                    {{ additionForm.errors.label }}
+                </p>
 
                 <!-- Mobile : ligne label/valeur ; desktop : deux colonnes empilées. -->
                 <div class="mt-2.5 lg:mt-3 lg:grid lg:grid-cols-2 lg:gap-3.5">
@@ -355,7 +488,12 @@ function varianceLabel(entry) {
                     </p>
                 </div>
 
-                <div class="mt-3 flex gap-1.5 lg:mt-3.5 lg:gap-2">
+                <p class="mt-2.5 text-[11px] text-ink-muted lg:text-[10px]">
+                    Après validation, la prochaine période démarrera le {{ nextPeriodStartDay }} (lendemain de la
+                    fin du mois clôturé).
+                </p>
+
+                <div class="mt-2 flex gap-1.5 lg:mt-2.5 lg:gap-2">
                     <button
                         type="button"
                         class="btn-outline flex-1 py-2.5 text-[14px] lg:text-[13px]"
@@ -375,7 +513,12 @@ function varianceLabel(entry) {
                 </div>
             </section>
 
-            <button v-else type="button" class="btn-outline mt-3 w-full py-2.5 text-[15px] lg:mt-3.5" @click="closing = true">
+            <button
+                v-else
+                type="button"
+                class="btn-outline mt-3 w-full py-2.5 text-[15px] lg:mt-3.5"
+                @click="openClosingFor(closingForm.account_id)"
+            >
                 Clôturer le mois
             </button>
 

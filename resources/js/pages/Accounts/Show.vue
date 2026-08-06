@@ -58,7 +58,7 @@ const pointingLabel = computed(() =>
                 <Gauge :percent="pointingPercent" label="Progression du pointage" class="mt-1.5 lg:mt-2.5" />
                 <Link
                     v-if="props.account.pending_count > 0"
-                    :href="props.account.pointing_url"
+                    :href="`${routes.bilan}?cloture=${props.account.id}&pointer=1`"
                     class="mt-2.5 block text-[13px] text-accent-soft transition-colors hover:text-ink lg:mt-3 lg:text-[12px]"
                 >
                     Pointer maintenant, relevé en main →
