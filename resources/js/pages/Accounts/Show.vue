@@ -28,7 +28,9 @@ const props = defineProps({
     invite_url: { type: String, default: '' },
     /** @type {{requester_name: string, is_requester: boolean, i_approved: boolean, approvals_count: number, voters_count: number, approve_url: string, refuse_url: string}|null} */
     deletion_request: { type: Object, default: null },
-    /** Solde une fois passées les récurrentes du mois encore à venir — crédits compris. */
+    /** État du compte à ce jour : les opérations datées d'un jour à venir n'y pèsent pas encore. */
+    balance_today_cents: { type: Number, required: true },
+    /** Solde une fois tout tombé : récurrentes du mois, échéances de crédit, différées. */
     projected_balance_cents: { type: Number, default: null },
 });
 
@@ -140,17 +142,17 @@ const pointingLabel = computed(() =>
             </div>
             <div class="hidden flex-1 lg:block" />
             <div class="hidden text-right lg:block">
-                <Amount :cents="props.account.balance_cents" class="text-[26px] font-medium" />
-                <!-- Ce que le solde deviendra une fois les récurrentes du mois passées. -->
+                <Amount :cents="props.balance_today_cents" class="text-[26px] font-medium" />
+                <!-- Ce que le solde deviendra une fois tombé ce qui doit encore tomber : récurrentes, crédits, différées. -->
                 <p v-if="props.projected_balance_cents !== null" class="text-[12px] text-ink-muted">
-                    (<Amount :cents="props.projected_balance_cents" /> après les récurrentes du mois)
+                    (<Amount :cents="props.projected_balance_cents" /> après les opérations à venir)
                 </p>
             </div>
         </div>
 
-        <p class="mt-3 text-[28px] font-medium lg:hidden"><Amount :cents="props.account.balance_cents" /></p>
+        <p class="mt-3 text-[28px] font-medium lg:hidden"><Amount :cents="props.balance_today_cents" /></p>
         <p v-if="props.projected_balance_cents !== null" class="text-[13px] text-ink-muted lg:hidden">
-            (<Amount :cents="props.projected_balance_cents" /> après les récurrentes du mois)
+            (<Amount :cents="props.projected_balance_cents" /> après les opérations à venir)
         </p>
 
         <!-- Suppression demandée : chaque membre tranche, l'unanimité emporte le compte. -->

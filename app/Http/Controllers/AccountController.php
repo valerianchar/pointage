@@ -46,6 +46,7 @@ class AccountController extends Controller
                 ->where('occurred_on', '<=', $month->toDateString())]);
 
         $transactions = $this->visibleTransactions($account, $month);
+        $upcomingCents = $this->upcomingCents($account, $month);
 
         return Inertia::render('Accounts/Show', [
             'account' => AccountResource::make($account)->resolve(),
@@ -59,16 +60,30 @@ class AccountController extends Controller
             'can_invite' => $request->user()->can('manageMembers', $account),
             'invite_url' => route('members.store', $account->id),
             'deletion_request' => $this->deletionRequestOf($account, $request->user()),
-            'projected_balance_cents' => $this->projectedBalanceCents($account, $month),
+            'balance_today_cents' => $account->balance_cents - $upcomingCents,
+            'projected_balance_cents' => $this->projectedBalanceCents($account, $month, $upcomingCents),
         ]);
     }
 
     /**
-     * Solde après les récurrentes du mois qui ne sont pas encore passées —
-     * mensualités de crédit comprises, ajouts comme dépenses. Null quand rien
-     * n'est en attente : le solde courant dit déjà tout.
+     * Opérations déjà posées mais datées d'un jour à venir : dépenses différées,
+     * échéances de crédit créées d'avance. Elles pèsent sur le solde courant,
+     * pas sur l'état du compte à ce jour.
      */
-    private function projectedBalanceCents(Account $account, CarbonImmutable $month): ?int
+    private function upcomingCents(Account $account, CarbonImmutable $month): int
+    {
+        return (int) $account->transactions()
+            ->where('occurred_on', '>', $month->toDateString())
+            ->sum('amount_cents');
+    }
+
+    /**
+     * Solde une fois tout ce qui doit encore tomber passé : les récurrentes du
+     * mois pas encore matérialisées, plus les opérations déjà datées d'un jour
+     * à venir — mensualités de crédit et différées, que le solde courant porte
+     * déjà. Null quand rien n'est en attente : l'état à ce jour dit déjà tout.
+     */
+    private function projectedBalanceCents(Account $account, CarbonImmutable $month, int $upcomingCents): ?int
     {
         $pendingTemplatesCents = (int) $account->recurringTransactions()
             ->where('is_active', true)
@@ -78,7 +93,11 @@ class AccountController extends Controller
             ]))
             ->sum('amount_cents');
 
-        return $pendingTemplatesCents === 0 ? null : $account->balance_cents + $pendingTemplatesCents;
+        if ($pendingTemplatesCents === 0 && $upcomingCents === 0) {
+            return null;
+        }
+
+        return $account->balance_cents + $pendingTemplatesCents;
     }
 
     /**
