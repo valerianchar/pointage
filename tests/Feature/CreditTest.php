@@ -3,7 +3,9 @@
 namespace Tests\Feature;
 
 use App\Actions\GenerateRecurringTransactions;
+use App\Enums\AccountType;
 use App\Models\Account;
+use App\Models\AccountMember;
 use App\Models\Credit;
 use App\Models\User;
 use Carbon\CarbonImmutable;
@@ -107,6 +109,40 @@ class CreditTest extends TestCase
         $created = app(GenerateRecurringTransactions::class)->handle(CarbonImmutable::parse('2026-08-20'));
         $this->assertSame(0, $created);
         $this->assertSame(1, $account->transactions()->count());
+    }
+
+    public function test_a_member_declaring_a_credit_on_a_joint_account_puts_the_instalment_too(): void
+    {
+        $this->travelTo('2026-08-07');
+
+        $owner = User::factory()->create();
+        $member = User::factory()->create();
+        $account = Account::factory()->for($owner)->ofType(AccountType::Joint)->startingAt(100_000)->create();
+        AccountMember::factory()->accepted()->create(['account_id' => $account->id, 'user_id' => $member->id]);
+
+        $this->actingAs($member)
+            ->post('/credits', [
+                'account_id' => $account->id,
+                'name' => 'Prêt immobilier',
+                'remaining' => '150 000',
+                'monthly' => '250',
+                'term_months' => 240,
+                'payment_day' => 10,
+            ])
+            ->assertRedirect()
+            ->assertSessionHasNoErrors();
+
+        // L'échéance du 10 est posée, « à venir »…
+        $instalment = $account->transactions()->sole();
+        $this->assertSame('2026-08-10', $instalment->occurred_on->toDateString());
+        $this->assertNull($instalment->pointed_at);
+
+        // …et l'écran du compte la sépare du solde du jour dans sa projection.
+        $this->actingAs($member)
+            ->get("/compte/{$account->id}")
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->where('balance_today_cents', 100_000)
+                ->where('projected_balance_cents', 100_000 - 25_000));
     }
 
     public function test_deleting_the_credit_stops_the_instalment(): void
