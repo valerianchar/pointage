@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Http\Resources\TransactionResource;
-use App\Models\RecurringTransaction;
 use App\Models\Transaction;
 use App\Queries\RecurringInstances;
 use Carbon\CarbonImmutable;
@@ -17,28 +16,33 @@ class RecurringTransactionController extends Controller
     public function __construct(private readonly RecurringInstances $recurringInstances) {}
 
     /**
-     * Instances du mois issues des modèles récurrents, avec leur reste à pointer,
-     * plus les modèles dont le jour n'est pas encore arrivé.
+     * Instances du mois issues des modèles récurrents, avec leur reste à pointer.
+     *
+     * Le mois entier est matérialisé d'avance : les instances dont le jour n'est
+     * pas arrivé sont présentées « à venir », à part — elles ne sont ni à
+     * pointer, ni comptées dans le reste à pointer.
      */
     public function index(Request $request): Response
     {
         $month = CarbonImmutable::now();
         $instances = $this->recurringInstances->forUserMonth($request->user(), $month);
-        $upcoming = $this->recurringInstances->upcomingForUserMonth($request->user(), $month);
+        [$upcoming, $arrived] = $instances->partition(
+            fn (Transaction $instance): bool => $instance->occurred_on->isFuture(),
+        );
 
         return Inertia::render('Recurring/Index', [
             'month_label' => Str::ucfirst($month->translatedFormat('F Y')),
-            'instances' => TransactionResource::collection($instances)->resolve(),
-            'upcoming' => $upcoming->map(fn (RecurringTransaction $template): array => [
-                'id' => $template->id,
-                'label' => $template->label,
-                'amount_cents' => $template->amount_cents,
-                'account_name' => $template->account->name,
-                'tag' => $template->tag?->name,
-                'day_label' => 'le '.$template->day_of_month,
+            'instances' => TransactionResource::collection($arrived->values())->resolve(),
+            'upcoming' => $upcoming->map(fn (Transaction $instance): array => [
+                'id' => $instance->id,
+                'label' => $instance->label,
+                'amount_cents' => $instance->amount_cents,
+                'account_name' => $instance->account->name,
+                'tag' => $instance->tag?->name,
+                'day_label' => 'le '.$instance->occurred_on->day,
             ])->values()->all(),
-            'pending_count' => $instances->reject(fn (Transaction $instance): bool => $instance->isPointed())->count(),
-            'total_count' => $instances->count(),
+            'pending_count' => $arrived->reject(fn (Transaction $instance): bool => $instance->isPointed())->count(),
+            'total_count' => $arrived->count(),
         ]);
     }
 }

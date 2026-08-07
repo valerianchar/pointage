@@ -58,11 +58,11 @@ class TransactionController extends Controller
             $request->filled('occurred_on') ? CarbonImmutable::parse($request->string('occurred_on')->value()) : null,
         );
 
-        $message = $transaction === null
-            ? 'Récurrente programmée : elle apparaîtra le jour choisi.'
-            : ($transaction->occurred_on->isFuture()
-                ? 'Opération différée enregistrée : elle pèse déjà sur le solde.'
-                : 'Opération ajoutée, en attente de pointage.');
+        $message = $transaction->occurred_on->isFuture()
+            ? ($request->boolean('is_recurring')
+                ? 'Récurrente posée : son échéance du mois est sur le compte, à venir.'
+                : 'Opération différée enregistrée, à venir sur le compte.')
+            : 'Opération ajoutée, en attente de pointage.';
 
         // Le pointage guidé ajoute des oublis sans quitter sa file : il reste sur place.
         if ($request->boolean('stay')) {

@@ -28,7 +28,7 @@ const props = defineProps({
                 <p class="mt-px flex items-center gap-1.5 text-[12px] text-ink-muted">
                     <TagPill v-if="transaction.tag">{{ transaction.tag }}</TagPill>
                     <span>{{ transaction.date_label }}</span>
-                    <!-- Différée : datée d'un jour à venir, déjà comptée dans le solde. -->
+                    <!-- Datée d'un jour à venir : comptée dans la projection, pas dans le solde du jour. -->
                     <span v-if="transaction.is_upcoming" class="flex items-center gap-0.5 text-accent-soft">
                         <PhIcon name="ph-clock-countdown" class="text-[13px]" />
                         à venir

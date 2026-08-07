@@ -19,9 +19,11 @@ final class MonthlyTotals
             ->whereIn('account_id', $user->accessibleAccounts()->select('accounts.id'))
             // Une réévaluation de marché n'est ni un ajout ni une dépense.
             ->where('is_revaluation', false)
+            // Le mois s'arrête à aujourd'hui : les échéances posées d'avance ne
+            // sont pas encore des dépenses ni des ajouts.
             ->whereBetween('occurred_on', [
                 $month->copy()->startOfMonth()->toDateString(),
-                $month->copy()->endOfMonth()->toDateString(),
+                $month->copy()->endOfMonth()->min(now())->toDateString(),
             ])
             ->selectRaw('COALESCE(SUM(CASE WHEN amount_cents > 0 THEN amount_cents ELSE 0 END), 0) as income_cents')
             ->selectRaw('COALESCE(SUM(CASE WHEN amount_cents < 0 THEN -amount_cents ELSE 0 END), 0) as expense_cents')

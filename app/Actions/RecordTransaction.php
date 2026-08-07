@@ -6,7 +6,6 @@ use App\Models\Account;
 use App\Models\Tag;
 use App\Models\Transaction;
 use App\Support\MonthlyDate;
-use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\DB;
 
@@ -17,18 +16,18 @@ final class RecordTransaction
      * elle crée aussi le modèle qui la fera réapparaître les mois suivants, au
      * jour choisi.
      *
-     * Si ce jour est déjà passé — ou est aujourd'hui —, l'opération du mois est
-     * créée tout de suite, datée de ce jour, et devient la première instance du
-     * modèle. Un jour encore à venir ne crée rien : la génération quotidienne
-     * s'en chargera à la date dite.
+     * L'opération du mois est créée tout de suite, datée de ce jour — « à
+     * venir » s'il n'est pas encore arrivé, comme les échéances de crédit. Une
+     * échéance connue d'avance se voit d'avance ; la génération quotidienne ne
+     * sert qu'aux mois suivants.
      *
      * `$alreadyPointed` sert au panneau de clôture : un oubli repéré sur le
      * relevé y figure déjà — il naît pointé.
      *
      * `$occurredOn` date une opération ponctuelle — passée pour un rattrapage,
-     * future pour une dépense différée : elle pèse sur le solde dès maintenant
-     * et attendra son relevé pour être pointée. Une récurrente l'ignore, son
-     * jour du mois fait foi.
+     * future pour une dépense différée : elle apparaît « à venir », comptée
+     * dans la projection, et attendra son relevé pour être pointée. Une
+     * récurrente l'ignore, son jour du mois fait foi.
      */
     public function handle(
         Account $account,
@@ -40,8 +39,8 @@ final class RecordTransaction
         ?int $recurringDay = null,
         bool $alreadyPointed = false,
         ?CarbonInterface $occurredOn = null,
-    ): ?Transaction {
-        return DB::transaction(function () use ($account, $label, $signedAmountCents, $tag, $isRecurring, $today, $recurringDay, $alreadyPointed, $occurredOn): ?Transaction {
+    ): Transaction {
+        return DB::transaction(function () use ($account, $label, $signedAmountCents, $tag, $isRecurring, $today, $recurringDay, $alreadyPointed, $occurredOn): Transaction {
             $dayOfMonth = $recurringDay ?? $today->day;
             $occurrence = $isRecurring ? MonthlyDate::inMonth($today, $dayOfMonth) : ($occurredOn ?? $today);
 
@@ -53,10 +52,6 @@ final class RecordTransaction
                     'tag_id' => $tag?->id,
                 ])
                 : null;
-
-            if ($isRecurring && $occurrence->greaterThan(CarbonImmutable::instance($today)->endOfDay())) {
-                return null;
-            }
 
             return $account->transactions()->create([
                 'label' => $label,

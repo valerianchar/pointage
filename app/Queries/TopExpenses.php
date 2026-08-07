@@ -22,9 +22,11 @@ final class TopExpenses
             ->where('transactions.amount_cents', '<', 0)
             // Une baisse de marché n'est pas une dépense.
             ->where('transactions.is_revaluation', false)
+            // Le mois s'arrête à aujourd'hui : une échéance posée d'avance n'est
+            // pas encore une dépense.
             ->whereBetween('transactions.occurred_on', [
                 $month->copy()->startOfMonth()->toDateString(),
-                $month->copy()->endOfMonth()->toDateString(),
+                $month->copy()->endOfMonth()->min(now())->toDateString(),
             ])
             // La dépense la plus lourde est le montant le plus négatif.
             ->orderBy('transactions.amount_cents')

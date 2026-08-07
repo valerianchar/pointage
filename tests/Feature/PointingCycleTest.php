@@ -32,9 +32,9 @@ class PointingCycleTest extends TestCase
         $this->actingAs($user)
             ->get('/')
             ->assertInertia(fn (AssertableInertia $page) => $page
-                // Le solde anticipe la dépense différée…
-                ->where('accounts.0.balance_cents', 100_000 - 2_000 - 35_000)
-                // …mais elle n'est pas encore à pointer.
+                // Le solde dit l'état à ce jour : la dépense différée attend sa date…
+                ->where('accounts.0.balance_cents', 100_000 - 2_000)
+                // …et elle n'est pas encore à pointer.
                 ->where('accounts.0.pending_count', 1));
     }
 

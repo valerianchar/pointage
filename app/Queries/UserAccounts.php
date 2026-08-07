@@ -38,7 +38,10 @@ final class UserAccounts
     {
         return $user->accessibleAccounts()
             // Solde et reste à pointer sont agrégés en base : une requête, pas une par compte.
-            ->withSum('transactions', 'amount_cents')
+            // Le solde dit l'état à ce jour : les opérations posées d'avance — récurrentes
+            // du mois, échéances de crédit, différées — attendent leur date pour y peser.
+            ->withSum(['transactions' => fn ($query) => $query
+                ->where('occurred_on', '<=', now()->toDateString())], 'amount_cents')
             // Une opération à venir n'est pas encore à pointer : elle entrera
             // dans le cycle le jour où elle tombe.
             ->withCount(['transactions as pending_count' => fn ($query) => $query

@@ -26,7 +26,7 @@ class TransactionResource extends JsonResource
             'is_pointed' => $this->isPointed(),
             'is_recurring' => $this->recurring_transaction_id !== null,
             'is_revaluation' => $this->is_revaluation,
-            // Différée : datée d'un jour à venir, elle pèse déjà sur le solde.
+            // Datée d'un jour à venir : comptée dans la projection, pas dans le solde du jour.
             'is_upcoming' => $this->occurred_on->isFuture(),
             'account_name' => $this->whenLoaded('account', fn (): string => $this->account->name),
             'tag_id' => $this->tag_id,

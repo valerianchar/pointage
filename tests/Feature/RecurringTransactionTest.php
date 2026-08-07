@@ -19,6 +19,9 @@ class RecurringTransactionTest extends TestCase
 
     public function test_the_screen_counts_what_is_left_to_point_this_month(): void
     {
+        // Milieu de mois : il reste de la place pour une échéance « à venir ».
+        $this->travelTo(now()->startOfMonth()->addDays(14));
+
         $user = User::factory()->create();
         $account = Account::factory()->for($user)->create();
         $tag = Tag::factory()->for($account)->named('Abonnements')->create();
@@ -27,6 +30,11 @@ class RecurringTransactionTest extends TestCase
         Transaction::factory()->for($account)->for($tag)->for($template)->expense(7_340)->pointed()->create();
         Transaction::factory()->for($account)->for($tag)->for($template)->expense(1_099)
             ->on(now()->startOfMonth()->addDay()->toDateString())
+            ->create();
+
+        // Posée d'avance : présentée « à venir », ni à pointer ni comptée.
+        Transaction::factory()->for($account)->for($tag)->for($template)->expense(2_000)
+            ->on(now()->setDay(20)->toDateString())
             ->create();
 
         // Une opération ponctuelle ne doit pas apparaître sur cet écran.
@@ -41,7 +49,10 @@ class RecurringTransactionTest extends TestCase
                 ->where('pending_count', 1)
                 ->where('total_count', 2)
                 ->where('instances.0.account_name', $account->name)
-                ->where('instances.0.tag', 'Abonnements'));
+                ->where('instances.0.tag', 'Abonnements')
+                ->has('upcoming', 1)
+                ->where('upcoming.0.amount_cents', -2_000)
+                ->where('upcoming.0.day_label', 'le 20'));
     }
 
     public function test_instances_from_other_months_are_left_out(): void
@@ -101,16 +112,20 @@ class RecurringTransactionTest extends TestCase
         $this->assertSame('2026-02-28', $account->transactions()->sole()->occurred_on->toDateString());
     }
 
-    public function test_an_instance_only_appears_once_its_day_has_arrived(): void
+    public function test_an_instance_is_posted_ahead_of_its_day_and_dated_it(): void
     {
         $account = Account::factory()->create();
         RecurringTransaction::factory()->for($account)->onDay(15)->create();
 
         $generate = new GenerateRecurringTransactions;
 
-        $this->assertSame(0, $generate->handle(CarbonImmutable::parse('2026-09-14')));
-        $this->assertSame(1, $generate->handle(CarbonImmutable::parse('2026-09-15')));
+        // Le passage du 1er pose déjà l'échéance du 15, « à venir »…
+        $this->assertSame(1, $generate->handle(CarbonImmutable::parse('2026-09-01')));
         $this->assertSame('2026-09-15', $account->transactions()->sole()->occurred_on->toDateString());
+
+        // …et le jour venu, rien à recréer.
+        $this->assertSame(0, $generate->handle(CarbonImmutable::parse('2026-09-15')));
+        $this->assertSame(1, $account->transactions()->count());
     }
 
     public function test_a_missed_day_is_caught_up_by_the_next_run(): void

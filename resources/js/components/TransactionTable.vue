@@ -57,7 +57,7 @@ const props = defineProps({
                                 v-if="transaction.is_upcoming"
                                 name="ph-clock-countdown"
                                 class="text-[12px] text-accent-soft"
-                                title="À venir — pèse déjà sur le solde"
+                                title="À venir — comptée dans la projection, pas dans le solde du jour"
                             />
                         </span>
                     </td>

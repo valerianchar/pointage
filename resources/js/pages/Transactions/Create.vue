@@ -84,7 +84,7 @@ function submit() {
                     <input v-model="form.occurred_on" type="date" class="field" />
                 </FormField>
                 <p v-if="form.occurred_on > today" class="mt-1 text-[12px] text-ink-muted lg:text-[11px]">
-                    Dépense différée : elle pèse sur le solde dès maintenant, à pointer à son passage sur le relevé.
+                    Dépense différée : posée « à venir », comptée dans la projection du compte, à pointer à son passage sur le relevé.
                 </p>
             </div>
 

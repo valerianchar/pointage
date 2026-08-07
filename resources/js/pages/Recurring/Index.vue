@@ -21,7 +21,7 @@ function togglePointing(instance) {
     <div class="max-w-[720px]">
         <h1 class="text-xl lg:text-[22px]">Récurrentes</h1>
         <p class="mt-1 text-[13px] text-ink-muted lg:mt-1.5 lg:text-[12px]">
-            Créées automatiquement le jour choisi. Pointez-les quand elles passent sur votre relevé.
+            Posées pour le mois dès son début, chacune datée de son jour. Pointez-les quand elles passent sur votre relevé.
         </p>
         <p class="mt-2 text-[13px] text-accent-soft lg:mt-2.5 lg:text-[12px]">
             {{ props.pending_count }} / {{ props.total_count }} à pointer ce mois-ci

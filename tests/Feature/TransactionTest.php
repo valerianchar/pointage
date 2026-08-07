@@ -84,14 +84,18 @@ class TransactionTest extends TestCase
                 'occurred_on' => $inThreeDays,
             ])
             ->assertRedirect("/compte/{$account->id}")
-            ->assertSessionHas('success', 'Opération différée enregistrée : elle pèse déjà sur le solde.');
+            ->assertSessionHas('success', 'Opération différée enregistrée, à venir sur le compte.');
 
         $transaction = $account->transactions()->sole();
 
-        // Datée du prélèvement, non pointée — mais déjà décomptée du solde.
+        // Datée du prélèvement, non pointée — comptée dans la projection du compte.
         $this->assertSame($inThreeDays, $transaction->occurred_on->toDateString());
         $this->assertNull($transaction->pointed_at);
-        $this->assertSame(165_000, $account->fresh()->balance_cents);
+        $this->actingAs($user)
+            ->get("/compte/{$account->id}")
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->where('balance_today_cents', 200_000)
+                ->where('projected_balance_cents', 200_000 - 35_000));
     }
 
     public function test_a_recurring_operation_ignores_the_one_off_date(): void
@@ -182,7 +186,7 @@ class TransactionTest extends TestCase
         $this->assertSame('2026-08-05', $account->transactions()->sole()->occurred_on->toDateString());
     }
 
-    public function test_a_recurring_operation_set_on_a_future_day_waits_for_it(): void
+    public function test_a_recurring_operation_set_on_a_future_day_is_posted_ahead(): void
     {
         $this->travelTo('2026-08-20');
         $user = User::factory()->create();
@@ -199,9 +203,11 @@ class TransactionTest extends TestCase
             ])
             ->assertRedirect();
 
-        // Le modèle existe, mais aucune opération avant le jour dit.
+        // L'échéance du mois est posée tout de suite, « à venir », datée du jour choisi.
         $this->assertSame(27, $account->recurringTransactions()->sole()->day_of_month);
-        $this->assertSame(0, $account->transactions()->count());
+        $instalment = $account->transactions()->sole();
+        $this->assertSame('2026-08-27', $instalment->occurred_on->toDateString());
+        $this->assertNull($instalment->pointed_at);
     }
 
     public function test_a_one_off_operation_creates_no_template(): void
