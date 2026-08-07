@@ -57,6 +57,10 @@ export function connectRealtime(broadcast) {
 
     echo.private(`users.${broadcast.user_id}`)
         .listen('.account.activity', () => quietReload())
+        .listen('.account.invited', (event) => {
+            toast(`${event.inviter_name} vous invite à rejoindre « ${event.account_name} » — la réponse vous attend sur l'accueil.`);
+            quietReload();
+        })
         .listen('.account.deletion-requested', (event) => {
             toast(`${event.requester_name} demande la suppression de « ${event.account_name} » — à vous de trancher.`, true);
             quietReload();

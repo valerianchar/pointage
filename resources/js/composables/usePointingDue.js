@@ -35,8 +35,9 @@ export function usePointingDue() {
         dueAccounts.value.filter((account) => account.days_until_period_end > 1),
     );
 
-    const blockingAccount = computed(
-        () => dueAccounts.value.find((account) => account.days_until_period_end <= 1) ?? null,
+    /* Tous les comptes au pied du mur — l'écran bloquant propose de choisir. */
+    const blockingAccounts = computed(() =>
+        dueAccounts.value.filter((account) => account.days_until_period_end <= 1),
     );
 
     const reminderDismissed = computed(() => dismissedOn.value === new Date().toDateString());
@@ -51,5 +52,5 @@ export function usePointingDue() {
         }
     }
 
-    return { reminderAccounts, blockingAccount, reminderDismissed, dismissReminderForToday };
+    return { reminderAccounts, blockingAccounts, reminderDismissed, dismissReminderForToday };
 }

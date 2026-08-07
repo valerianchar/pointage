@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['label', 'amount_cents', 'day_of_month', 'is_active', 'tag_id'])]
+#[Fillable(['label', 'amount_cents', 'day_of_month', 'is_active', 'tag_id', 'credit_id'])]
 class RecurringTransaction extends Model
 {
     /** @use HasFactory<RecurringTransactionFactory> */

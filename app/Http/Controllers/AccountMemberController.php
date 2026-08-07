@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Enums\AccountType;
+use App\Events\AccountActivityChanged;
+use App\Events\JointAccountInvited;
 use App\Models\Account;
 use App\Models\AccountMember;
 use App\Models\User;
@@ -50,7 +52,9 @@ class AccountMemberController extends Controller
             'invited_by' => $request->user()->id,
         ]);
 
-        // Prévenue en push si abonnée ; sinon la bannière l'attend sur son accueil.
+        // App ouverte : la bannière apparaît en direct. Fermée : le push prend le relais.
+        JointAccountInvited::dispatch($account, $request->user(), $invitee->id);
+
         if ($invitee->pushSubscriptions()->exists()) {
             $invitee->notify(new JointAccountInvitation($account, $request->user()));
         }
@@ -59,7 +63,8 @@ class AccountMemberController extends Controller
     }
 
     /**
-     * L'invité accepte : le compte devient le sien aussi, partout.
+     * L'invité accepte : le compte devient le sien aussi, partout — et la
+     * salle d'attente des autres membres se met à jour en direct.
      */
     public function accept(Request $request, AccountMember $member): RedirectResponse
     {
@@ -67,6 +72,7 @@ class AccountMemberController extends Controller
 
         if (! $member->isAccepted()) {
             $member->update(['accepted_at' => now()]);
+            $this->refreshOtherMembers($member->account, $request->user());
         }
 
         return back()->with('success', "« {$member->account->name} » vous est ouvert — il apparaît dans vos comptes.");
@@ -91,7 +97,25 @@ class AccountMemberController extends Controller
         };
 
         $member->delete();
+        $this->refreshOtherMembers($member->account, $request->user());
 
         return back()->with('success', $message);
+    }
+
+    /**
+     * Rafraîchit en direct l'écran des autres membres — salle d'attente,
+     * liste des membres — après une réponse ou un départ.
+     */
+    private function refreshOtherMembers(Account $account, User $actor): void
+    {
+        $recipientIds = $account->members()->accepted()->pluck('user_id')
+            ->push($account->user_id)
+            ->unique()
+            ->reject(fn (int $userId): bool => $userId === $actor->id)
+            ->values();
+
+        if ($recipientIds->isNotEmpty()) {
+            AccountActivityChanged::dispatch($account->id, $recipientIds->all());
+        }
     }
 }

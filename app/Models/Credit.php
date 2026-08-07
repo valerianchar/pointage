@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 #[Fillable(['name', 'borrowed_cents', 'remaining_cents', 'monthly_cents', 'term_months', 'payment_day'])]
 class Credit extends Model
@@ -37,6 +38,12 @@ class Credit extends Model
     public function account(): BelongsTo
     {
         return $this->belongsTo(Account::class);
+    }
+
+    /** @return HasOne<RecurringTransaction, $this> */
+    public function recurringTransaction(): HasOne
+    {
+        return $this->hasOne(RecurringTransaction::class);
     }
 
     /**

@@ -6,6 +6,7 @@ use App\Actions\CreateAccount;
 use App\Actions\EnsureAssetPrices;
 use App\Actions\RequestAccountDeletion;
 use App\Enums\AccountType;
+use App\Events\JointAccountInvited;
 use App\Http\Requests\StoreAccountRequest;
 use App\Http\Resources\AccountResource;
 use App\Http\Resources\CreditResource;
@@ -58,7 +59,26 @@ class AccountController extends Controller
             'can_invite' => $request->user()->can('manageMembers', $account),
             'invite_url' => route('members.store', $account->id),
             'deletion_request' => $this->deletionRequestOf($account, $request->user()),
+            'projected_balance_cents' => $this->projectedBalanceCents($account, $month),
         ]);
+    }
+
+    /**
+     * Solde après les récurrentes du mois qui ne sont pas encore passées —
+     * mensualités de crédit comprises, ajouts comme dépenses. Null quand rien
+     * n'est en attente : le solde courant dit déjà tout.
+     */
+    private function projectedBalanceCents(Account $account, CarbonImmutable $month): ?int
+    {
+        $pendingTemplatesCents = (int) $account->recurringTransactions()
+            ->where('is_active', true)
+            ->whereDoesntHave('transactions', fn ($query) => $query->whereBetween('occurred_on', [
+                $month->startOfMonth()->toDateString(),
+                $month->endOfMonth()->toDateString(),
+            ]))
+            ->sum('amount_cents');
+
+        return $pendingTemplatesCents === 0 ? null : $account->balance_cents + $pendingTemplatesCents;
     }
 
     /**
@@ -160,6 +180,9 @@ class AccountController extends Controller
         );
 
         foreach ($invitees as $invitee) {
+            // App ouverte : bannière en direct ; fermée : le push prend le relais.
+            JointAccountInvited::dispatch($account, $request->user(), $invitee->id);
+
             if ($invitee->pushSubscriptions()->exists()) {
                 $invitee->notify(new JointAccountInvitation($account, $request->user()));
             }

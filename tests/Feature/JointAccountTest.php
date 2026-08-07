@@ -6,6 +6,7 @@ use App\Actions\DeleteAccount;
 use App\Actions\SendPointingReminders;
 use App\Enums\AccountType;
 use App\Enums\TransactionDirection;
+use App\Events\JointAccountInvited;
 use App\Models\Account;
 use App\Models\AccountMember;
 use App\Models\Transaction;
@@ -13,6 +14,7 @@ use App\Models\User;
 use App\Notifications\PointingPeriodEnded;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Notification;
 use Inertia\Testing\AssertableInertia;
 use Tests\TestCase;
@@ -70,6 +72,8 @@ class JointAccountTest extends TestCase
 
     public function test_the_owner_invites_by_exact_email_and_no_access_opens_before_acceptance(): void
     {
+        Event::fake([JointAccountInvited::class]);
+
         $account = $this->jointAccount();
         $invitee = User::factory()->create(['email' => 'conjoint@exemple.fr']);
 
@@ -77,6 +81,9 @@ class JointAccountTest extends TestCase
             ->post("/compte/{$account->id}/membres", ['email' => 'conjoint@exemple.fr'])
             ->assertRedirect()
             ->assertSessionHas('success');
+
+        // L'invité, s'il a l'app ouverte, voit la bannière arriver en direct.
+        Event::assertDispatched(JointAccountInvited::class, fn (JointAccountInvited $event): bool => $event->inviteeId === $invitee->id);
 
         $member = $account->members()->sole();
         $this->assertSame($invitee->id, $member->user_id);

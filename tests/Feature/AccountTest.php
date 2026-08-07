@@ -135,6 +135,33 @@ class AccountTest extends TestCase
         $this->assertSame(0, $user->accounts()->count());
     }
 
+    public function test_the_projected_balance_anticipates_the_month_recurring_flows(): void
+    {
+        $user = User::factory()->create();
+        $account = Account::factory()->for($user)->startingAt(100_000)->create();
+
+        // Deux modèles encore sans instance ce mois-ci : un loyer, un salaire.
+        $account->recurringTransactions()->create(['label' => 'Loyer', 'amount_cents' => -60_000, 'day_of_month' => 28]);
+        $account->recurringTransactions()->create(['label' => 'Salaire', 'amount_cents' => 210_000, 'day_of_month' => 28]);
+        // Éteint : il ne compte pas.
+        $account->recurringTransactions()->create(['label' => 'Ancien abonnement', 'amount_cents' => -1_000, 'day_of_month' => 28, 'is_active' => false]);
+
+        $this->actingAs($user)
+            ->get("/compte/{$account->id}")
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->where('projected_balance_cents', 100_000 - 60_000 + 210_000));
+    }
+
+    public function test_without_pending_recurring_flows_there_is_no_projection(): void
+    {
+        $user = User::factory()->create();
+        $account = Account::factory()->for($user)->startingAt(100_000)->create();
+
+        $this->actingAs($user)
+            ->get("/compte/{$account->id}")
+            ->assertInertia(fn (AssertableInertia $page) => $page->where('projected_balance_cents', null));
+    }
+
     public function test_a_crypto_account_is_born_at_the_value_of_its_positions(): void
     {
         Http::fake(['api.coingecko.com/*' => Http::response([

@@ -28,6 +28,8 @@ const props = defineProps({
     invite_url: { type: String, default: '' },
     /** @type {{requester_name: string, is_requester: boolean, i_approved: boolean, approvals_count: number, voters_count: number, approve_url: string, refuse_url: string}|null} */
     deletion_request: { type: Object, default: null },
+    /** Solde une fois passées les récurrentes du mois encore à venir — crédits compris. */
+    projected_balance_cents: { type: Number, default: null },
 });
 
 /* Comptes à positions — crypto, PEA : le compte suit la valeur du portefeuille. */
@@ -137,10 +139,19 @@ const pointingLabel = computed(() =>
                 <p class="text-[12px] text-ink-muted lg:text-[11px]">{{ props.account.type_label }}</p>
             </div>
             <div class="hidden flex-1 lg:block" />
-            <Amount :cents="props.account.balance_cents" class="hidden text-[26px] font-medium lg:block" />
+            <div class="hidden text-right lg:block">
+                <Amount :cents="props.account.balance_cents" class="text-[26px] font-medium" />
+                <!-- Ce que le solde deviendra une fois les récurrentes du mois passées. -->
+                <p v-if="props.projected_balance_cents !== null" class="text-[12px] text-ink-muted">
+                    (<Amount :cents="props.projected_balance_cents" /> après les récurrentes du mois)
+                </p>
+            </div>
         </div>
 
         <p class="mt-3 text-[28px] font-medium lg:hidden"><Amount :cents="props.account.balance_cents" /></p>
+        <p v-if="props.projected_balance_cents !== null" class="text-[13px] text-ink-muted lg:hidden">
+            (<Amount :cents="props.projected_balance_cents" /> après les récurrentes du mois)
+        </p>
 
         <!-- Suppression demandée : chaque membre tranche, l'unanimité emporte le compte. -->
         <div v-if="props.deletion_request" class="mt-3 rounded-card border border-ink-muted bg-surface p-4 lg:mt-5">

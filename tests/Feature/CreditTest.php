@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Actions\GenerateRecurringTransactions;
 use App\Models\Account;
 use App\Models\Credit;
 use App\Models\User;
@@ -68,6 +69,72 @@ class CreditTest extends TestCase
         $this->assertSame(14_230_000, $credit->remaining_cents);
         $this->assertSame(74_500, $credit->monthly_cents);
         $this->assertSame(21, $credit->repaid_percent);
+    }
+
+    public function test_declaring_a_credit_puts_the_month_instalment_on_the_account(): void
+    {
+        $this->travelTo('2026-08-10');
+
+        $user = User::factory()->create();
+        $account = Account::factory()->for($user)->startingAt(100_000)->create();
+
+        $this->actingAs($user)
+            ->post('/credits', [
+                'account_id' => $account->id,
+                'name' => 'Prêt auto',
+                'borrowed' => '12 000',
+                'remaining' => '9 000',
+                'monthly' => '250',
+                'term_months' => 36,
+                'payment_day' => 20,
+            ])
+            ->assertRedirect()
+            ->assertSessionHasNoErrors();
+
+        // Le modèle récurrent naît avec le crédit…
+        $template = $account->recurringTransactions()->sole();
+        $this->assertSame(-25_000, $template->amount_cents);
+        $this->assertSame(20, $template->day_of_month);
+        $this->assertSame($account->credits()->sole()->id, $template->credit_id);
+
+        // …et l'échéance du mois est déjà sur le compte, « à venir », comptée dans le solde.
+        $instalment = $account->transactions()->sole();
+        $this->assertSame('2026-08-20', $instalment->occurred_on->toDateString());
+        $this->assertNull($instalment->pointed_at);
+        $this->assertSame(100_000 - 25_000, $account->fresh()->balance_cents);
+
+        // La génération quotidienne ne la recrée pas : l'index mensuel est déjà pris.
+        $created = app(GenerateRecurringTransactions::class)->handle(CarbonImmutable::parse('2026-08-20'));
+        $this->assertSame(0, $created);
+        $this->assertSame(1, $account->transactions()->count());
+    }
+
+    public function test_deleting_the_credit_stops_the_instalment(): void
+    {
+        $this->travelTo('2026-08-10');
+
+        $user = User::factory()->create();
+        $account = Account::factory()->for($user)->create();
+
+        $this->actingAs($user)->post('/credits', [
+            'account_id' => $account->id,
+            'name' => 'Prêt auto',
+            'remaining' => '9 000',
+            'monthly' => '250',
+            'term_months' => 36,
+            'payment_day' => 20,
+        ]);
+
+        $credit = $account->credits()->sole();
+
+        $this->actingAs($user)
+            ->delete("/credits/{$credit->id}")
+            ->assertRedirect();
+
+        // L'échéance à venir — pure projection — s'efface, le modèle s'éteint.
+        $this->assertSame(0, $account->transactions()->count());
+        $this->assertFalse($account->recurringTransactions()->sole()->is_active);
+        $this->assertSame(0, $account->credits()->count());
     }
 
     public function test_giving_only_the_remaining_capital_starts_the_credit_at_nothing_repaid(): void

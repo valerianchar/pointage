@@ -6,25 +6,20 @@ import { routes } from '../routes';
 import PhIcon from './PhIcon.vue';
 
 const page = usePage();
-const { blockingAccount } = usePointingDue();
+const { blockingAccounts } = usePointingDue();
 
 /**
  * L'écran bloque tout sauf la page Bilan elle-même — c'est là que le pointage
  * se fait, il faut bien pouvoir y travailler.
  */
 const isVisible = computed(
-    () => blockingAccount.value !== null && !page.url.startsWith(routes.bilan),
+    () => blockingAccounts.value.length > 0 && !page.url.startsWith(routes.bilan),
 );
 
-const deadlineLabel = computed(() =>
-    blockingAccount.value?.days_until_period_end === 0 ? "aujourd'hui" : 'demain',
-);
+const deadlineLabel = (account) => (account.days_until_period_end === 0 ? "aujourd'hui" : 'demain');
 
-const operationsLabel = computed(() =>
-    blockingAccount.value?.pending_count > 1
-        ? `${blockingAccount.value.pending_count} opérations restent à pointer`
-        : '1 opération reste à pointer',
-);
+const operationsLabel = (account) =>
+    account.pending_count > 1 ? `${account.pending_count} opérations à pointer` : '1 opération à pointer';
 </script>
 
 <template>
@@ -41,18 +36,28 @@ const operationsLabel = computed(() =>
             <PhIcon name="ph-warning-circle" class="text-[30px] text-accent lg:text-[34px]" />
             <p class="mt-2 text-[16px] font-medium lg:text-[17px]">Pointage obligatoire</p>
             <p class="mt-1.5 text-[13px] text-ink-muted lg:text-[12px]">
-                La période de pointage de « {{ blockingAccount.name }} » se termine {{ deadlineLabel }} :
-                {{ operationsLabel }}.
+                {{ blockingAccounts.length > 1
+                    ? 'Plusieurs comptes terminent leur période de pointage — choisissez par lequel commencer.'
+                    : `La période de pointage de « ${blockingAccounts[0].name} » se termine ${deadlineLabel(blockingAccounts[0])}.` }}
             </p>
             <p class="mt-1 text-[12px] text-ink-muted lg:text-[11px]">
                 La navigation est bloquée tant que le pointage n'est pas fait.
             </p>
-            <Link
-                :href="`${routes.bilan}?cloture=${blockingAccount.id}&pointer=1`"
-                class="btn-outline mt-3.5 block w-full py-2.5 text-[15px] lg:text-[13px]"
-            >
-                Faire mon pointage
-            </Link>
+
+            <!-- Un compte par bouton : on choisit, on n'« arrive » plus sur le premier. -->
+            <div class="mt-3.5 flex flex-col gap-2">
+                <Link
+                    v-for="account in blockingAccounts"
+                    :key="account.id"
+                    :href="`${routes.bilan}?cloture=${account.id}&pointer=1`"
+                    class="btn-outline flex items-center justify-between gap-2 px-3.5 py-2.5 text-left text-[14px] lg:text-[13px]"
+                >
+                    <span class="min-w-0 truncate">{{ account.name }}</span>
+                    <span class="shrink-0 text-[11px] text-ink-muted">
+                        {{ operationsLabel(account) }} · fin {{ deadlineLabel(account) }}
+                    </span>
+                </Link>
+            </div>
         </div>
     </div>
 </template>
