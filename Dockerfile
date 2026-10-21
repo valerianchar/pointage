@@ -20,9 +20,9 @@ RUN composer dump-autoload --classmap-authoritative --no-dev
 
 # FrankenPHP sert public/, exécute PHP et obtient le certificat TLS lui-même :
 # un seul conteneur en façade, donc une seule chose à surveiller sur le serveur.
-# Version épinglée : PHP 8.4.27 corrige PHP2Shell (CVE-2026-109618/109619, RCE
-# sans authentification) qui touche toutes les 8.4 jusqu’à 8.4.26.
-FROM dunglas/frankenphp:1.13.2-php8.4-alpine AS runtime
+# Version épinglée : PHP 8.5.12 corrige PHP2Shell (CVE-2026-109618/109619, RCE
+# sans authentification) qui touche toutes les 8.5 jusqu’à 8.5.11.
+FROM dunglas/frankenphp:1.13.2-php8.5-alpine AS runtime
 
 RUN install-php-extensions pdo_mysql pdo_pgsql intl opcache
 
