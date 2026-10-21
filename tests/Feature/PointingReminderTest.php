@@ -27,7 +27,7 @@ class PointingReminderTest extends TestCase
 
         $account = Account::factory()->create(['period_start_day' => 1, 'period_end_day' => 31]);
         $this->subscribe($account->user);
-        Transaction::factory()->for($account)->create(['pointed_at' => null]);
+        Transaction::factory()->for($account)->on('2026-08-10')->create(['pointed_at' => null]);
 
         $sent = (new SendPointingReminders)->handle(CarbonImmutable::parse('2026-08-31'));
 
@@ -41,7 +41,7 @@ class PointingReminderTest extends TestCase
 
         $account = Account::factory()->create(['period_start_day' => 1, 'period_end_day' => 31]);
         $this->subscribe($account->user);
-        Transaction::factory()->for($account)->create(['pointed_at' => null]);
+        Transaction::factory()->for($account)->on('2026-08-10')->create(['pointed_at' => null]);
 
         $this->assertSame(0, (new SendPointingReminders)->handle(CarbonImmutable::parse('2026-08-20')));
         Notification::assertNothingSent();
@@ -54,7 +54,7 @@ class PointingReminderTest extends TestCase
         // Du 5 au 4 : la fenêtre entamée le 5 août se termine le 4 septembre.
         $account = Account::factory()->create(['period_start_day' => 5, 'period_end_day' => 4]);
         $this->subscribe($account->user);
-        Transaction::factory()->for($account)->create(['pointed_at' => null]);
+        Transaction::factory()->for($account)->on('2026-08-10')->create(['pointed_at' => null]);
 
         $this->assertSame(0, (new SendPointingReminders)->handle(CarbonImmutable::parse('2026-08-31')));
         $this->assertSame(1, (new SendPointingReminders)->handle(CarbonImmutable::parse('2026-09-04')));
@@ -66,7 +66,7 @@ class PointingReminderTest extends TestCase
 
         $account = Account::factory()->create(['period_start_day' => 1, 'period_end_day' => 31]);
         $this->subscribe($account->user);
-        Transaction::factory()->for($account)->create(['pointed_at' => now()]);
+        Transaction::factory()->for($account)->on('2026-08-10')->create(['pointed_at' => now()]);
 
         $this->assertSame(0, (new SendPointingReminders)->handle(CarbonImmutable::parse('2026-08-31')));
         Notification::assertNothingSent();
@@ -77,7 +77,7 @@ class PointingReminderTest extends TestCase
         Notification::fake();
 
         $account = Account::factory()->create(['period_start_day' => 1, 'period_end_day' => 31]);
-        Transaction::factory()->for($account)->create(['pointed_at' => null]);
+        Transaction::factory()->for($account)->on('2026-08-10')->create(['pointed_at' => null]);
 
         $this->assertSame(0, (new SendPointingReminders)->handle(CarbonImmutable::parse('2026-08-31')));
         Notification::assertNothingSent();

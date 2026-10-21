@@ -213,7 +213,7 @@ class JointAccountTest extends TestCase
 
         $account->user->updatePushSubscription('https://push.example/proprietaire', 'p256dh', 'auth');
         $member->user->updatePushSubscription('https://push.example/membre', 'p256dh', 'auth');
-        Transaction::factory()->for($account)->create(['pointed_at' => null]);
+        Transaction::factory()->for($account)->on('2026-08-10')->create(['pointed_at' => null]);
 
         $sent = (new SendPointingReminders)->handle(CarbonImmutable::parse('2026-08-31'));
 
